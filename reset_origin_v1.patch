@@ -1,0 +1,248 @@
+--- stream_server.py
++++ stream_server_reset_v1.py
+@@ -9,7 +9,7 @@
+     serial = None
+ 
+ app = Flask(__name__)
+-SERVER_VERSION = "OXY_DRIVE_V7"
++SERVER_VERSION = "OXY_DRIVE_V7_RESET_V1"
+ 
+ # ------------------------------------------------------------------------------
+ # TRẠNG THÁI HỆ THỐNG
+@@ -633,6 +633,7 @@
+ from pathlib import Path
+ import copy
+ import uuid
++visual_server_id = uuid.uuid4().hex
+ map_lock = threading.RLock()
+ map_dir = Path(os.environ.get('AGV_MAP_DIR', str(Path.home() / '.local/share/agv-dashboard'))).expanduser()
+ map_error = ''
+@@ -957,7 +958,7 @@
+         if auto:
+             v['moving']=bool(feedback_ok and not v.get('geometry_reason') and not v['lost'] and any(motion_feedback['wheels']))
+             v['speed']=math.hypot(*pwm_velocity(motion_feedback['wheels'])[:2]) if v['moving'] else 0.0
+-        return dict(v, environment=driving_environment, generation=drive_generation, snapshot_monotonic_ms=time.monotonic()*1000, measured=False,
++        return dict(v, environment=driving_environment, generation=drive_generation, server_instance=visual_server_id, snapshot_monotonic_ms=time.monotonic()*1000, measured=False,
+                     auto_waiting_measurement=auto and not feedback_ok, auto_pwm_estimate=auto and feedback_ok,
+                     drawing_settings=dict(drawing_settings),
+                     motion_pwm=copy.deepcopy(motion_feedback), accuracy_target_m=1.0, accuracy_verified=False,
+@@ -1003,6 +1004,28 @@
+             and not state.get('mode_pending')): return False
+     return bool(motion_feedback and 0 <= now-motion_feedback['received'] < .3
+                 and not motion_feedback['auto'] and not any(motion_feedback['wheels']))
++
++
++def drawing_reset_problem():
++    """Explain the existing STOP checks; this function never writes to USB."""
++    now = time.monotonic()
++    if driving_environment != 'real':
++        return 'Chọn Xe thật · USB trước khi đặt lại mô hình xe thật.'
++    if not (link_ready and ser is not None and ser.is_open):
++        return 'Mega chưa kết nối. Kiểm tra USB trước khi đặt lại.'
++    if state.get('mode_pending') or state.get('mode') != 'LÁI TAY':
++        return 'Cần LÁI TAY và STOP. Đóng hộp thoại, nhấn DỪNG và chờ Mega xác nhận.'
++    if not mode_time or not 0 <= now-mode_time < 2:
++        return 'Xác nhận chế độ Mega đã cũ; chờ dữ liệu mới rồi thử lại.'
++    if not data_time or not 0 <= now-data_time < .5:
++        return 'DATA từ Mega đã cũ; kiểm tra kết nối, không dùng vận tốc mô hình 0 để suy ra xe đã dừng.'
++    if state.get('action') != 'STOP':
++        return 'Mega chưa báo STOP. Đóng hộp thoại và nhấn DỪNG trước.'
++    if not motion_feedback or not 0 <= now-motion_feedback['received'] < .3:
++        return 'Thiếu phản hồi MOTION mới từ Mega. Cần PWM bốn bánh bằng 0 để xác nhận; không phải lỗi tải lại trang.'
++    if motion_feedback['auto'] or any(motion_feedback['wheels']):
++        return 'Phản hồi MOTION còn AUTO hoặc PWM bánh chưa bằng 0. Dừng xe trước khi đặt lại.'
++    return 'Trạng thái xe vừa thay đổi; chờ STOP ổn định rồi thử lại.'
+ 
+ 
+ def corner_feedback_event(line,now):
+@@ -1107,7 +1130,7 @@
+     global drive_generation
+     with serial_lock:
+         with map_lock:
+-            if not drawing_stopped(): return jsonify(error='Cần Xe thật, LÁI TAY, STOP và phản hồi PWM mới bằng 0'),409
++            if not drawing_stopped(): return jsonify(error=drawing_reset_problem()),409
+             body=request.get_json(silent=True)
+             if not isinstance(body,dict) or body.get('confirmed') is not True:
+                 return jsonify(error='Cần xác nhận vị trí/hướng thực của xe'),400
+@@ -1115,7 +1138,7 @@
+                 pose={k:float(body[k]) for k in ('x','y','theta')}
+                 if any(isinstance(body[k],bool) for k in pose) or not all(math.isfinite(x) for x in pose.values()): raise ValueError()
+                 if abs(pose['x'])>100 or abs(pose['y'])>100 or abs(pose['theta'])>3600: raise ValueError()
+-            except (ValueError,TypeError,KeyError): return jsonify(error='Tọa độ/hướng không hợp lệ'),400
++            except (ValueError,TypeError,KeyError,OverflowError): return jsonify(error='Tọa độ/hướng không hợp lệ'),400
+             previous=visual_sessions['real']
+             v=new_visual_session('command_estimate')
+             v.update(x=pose['x'],y=pose['y'],theta=pose['theta']%360,
+@@ -1125,7 +1148,12 @@
+             invalidate_map_pose('Đặt lại điểm đầu cho mô hình; không phải phép đo định vị')
+             drive_generation+=1
+             map_event('drawing_start_reset',dict(pose,measured=False))
+-    return jsonify(status='reset',msg='Đã đặt lại điểm đầu, hướng, quãng đường và vệt; không gửi lệnh motor.')
++            # Return the new session atomically, before another poll/control request.
++            result = dict(status='reset',
++                          msg='Đã đặt lại điểm đầu, hướng, quãng đường và vệt; không gửi lệnh motor.',
++                          visualization=presentation_snapshot(), navigation=map_snapshot(),
++                          control_server_time_ms=time.monotonic()*1000)
++    return jsonify(result)
+ 
+ 
+ 
+@@ -1571,6 +1599,12 @@
+         .map-form input:not([type=checkbox]),.map-form select {width:100%;box-sizing:border-box;padding:8px;background:#050e1c;border:1px solid #3b516d;color:#dbeafe;border-radius:4px;margin-top:4px;}
+         .map-form input:disabled {opacity:.4;}
+         .map-form p {font-size:11px;line-height:1.6;color:#94a3b8;}
++        .reset-dialog {width:min(540px,calc(100vw - 32px));max-height:85vh;overflow:auto;box-sizing:border-box;border:1px solid #38bdf8;border-radius:10px;padding:18px;background:#0a1525;color:#e2e8f0;}
++        .reset-dialog::backdrop {background:rgba(0,0,0,.7);}
++        .reset-dialog .map-form {margin:0;border:0;padding:0;}
++        .reset-dialog .reset-status {min-height:1.5em;color:#fda4af;}
++        .reset-dialog .reset-status.success {color:#4ade80;}
++        .reset-dialog .reset-readiness {color:#fbbf24;}
+         .check-label {margin:12px 0;}.map-form [type=checkbox] {vertical-align:middle;}
+         button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible {outline:2px solid #7dd3fc;outline-offset:2px;}
+         @media(max-width:1100px) {.main-grid {grid-template-columns:1fr;}.nav-grid .primary .telem-val {font-size:17px;}}
+@@ -1775,18 +1809,6 @@
+   <p>Đo một đoạn thẳng, không gồm cua/dạt/lùi. Tính hệ số rồi nhấn Lưu cấu hình vẽ; sau đó đặt lại điểm đầu cho lượt mới. Chưa xác nhận sai số ≤1 m.</p>
+   <div id="drawing_status" role="status">Đợi phản hồi Mega.</div>
+ </form>
+-<form id="drawing_start_form" class="map-form" hidden>
+-  <h3>Đặt lại điểm đầu của phiên vẽ</h3>
+-  <div class="form-fields">
+-    <label>X · m<input id="drawing_start_x" type="number" min="-100" max="100" step="0.01" value="0" required></label>
+-    <label>Y · m<input id="drawing_start_y" type="number" min="-100" max="100" step="0.01" value="0" required></label>
+-    <label>Hướng θ · ° (0 = +X, 90 = +Y)<input id="drawing_start_theta" type="number" min="-3600" max="3600" step="0.1" value="0" required></label>
+-  </div>
+-  <label><input id="drawing_start_confirm" type="checkbox" required> Tôi đã đặt xe thật đúng vị trí và hướng này, đang LÁI TAY và STOP.</label>
+-  <p>Đặt lại vị trí/hướng mô hình, quãng đường, số góc và vệt xanh. Không di chuyển xe, không phải phép đo vị trí. Tuyến khai báo được giữ.</p>
+-  <button type="submit">Xác nhận và đặt lại phiên</button>
+-  <button type="button" id="close_drawing_start">Đóng</button>
+-</form>
+ 
+ 
+             <form id="route_form" class="map-form" hidden>
+@@ -1824,6 +1846,23 @@
+         </div>
+     </div>
+ 
++    <dialog id="drawing_start_dialog" class="reset-dialog" aria-labelledby="drawing_start_title">
++      <form id="drawing_start_form" class="map-form">
++        <h3 id="drawing_start_title">Đặt lại điểm đầu / phiên vẽ</h3>
++        <p>Mở hộp này chưa thay tọa độ. Bấm Xác nhận để áp dụng; chỉ thay mô hình, không di chuyển xe thật. Tuyến khai báo được giữ.</p>
++        <div class="form-fields">
++          <label>X · m<input id="drawing_start_x" type="number" min="-100" max="100" step="0.01" value="0" required></label>
++          <label>Y · m<input id="drawing_start_y" type="number" min="-100" max="100" step="0.01" value="0" required></label>
++          <label>Hướng θ · ° (0 = +X, 90 = +Y)<input id="drawing_start_theta" type="number" min="-3600" max="3600" step="0.1" value="0" required></label>
++        </div>
++        <button type="button" id="drawing_start_zero">Điền mốc (0,0), hướng 0°</button>
++        <label class="check-label"><input id="drawing_start_confirm" type="checkbox" required> Tôi đã đặt xe thật đúng vị trí và hướng này, đang LÁI TAY và STOP.</label>
++        <p id="drawing_start_readiness" class="reset-readiness" role="status"></p>
++        <p id="drawing_start_status" class="reset-status" role="alert" aria-live="polite"></p>
++        <button type="submit" id="drawing_start_submit">Xác nhận và đặt lại phiên</button>
++        <button type="button" id="close_drawing_start">Hủy / Đóng</button>
++      </form>
++    </dialog>
+     <script>
+         // ---------------------------------------------------------------------
+         // KHỞI TẠO THREE.JS WEBGL CHUẨN VỚI ORBIT CONTROLS
+@@ -1876,6 +1915,8 @@
+ // Local Canvas renderer: no CDN or WebGL required for map or driving controls.
+ const byId = id => document.getElementById(id);
+ let latestTelemetry = null;
++// A slow poll from before a reset must not put the old pose back on screen.
++let resetFence = null;
+ let lastServerControlTime=null;
+ let lastServerControlReceived=0;
+ let currentMap = null;
+@@ -2116,6 +2157,9 @@
+ for(const [id,view] of [['view_top','top'],['view_iso','iso']])byId(id).onclick=()=>{mapView=view;mapPan={x:0,y:0};byId('view_top').classList.toggle('selected',view==='top');byId('view_iso').classList.toggle('selected',view==='iso');drawMap();};
+ function seconds(ageMs){return ageMs===null||ageMs===undefined?'—':ageMs<1000?ageMs+' ms':(ageMs/1000).toFixed(1)+' s';}
+ function renderTelemetry(d) {
++    if(resetFence && d.visualization &&
++       d.visualization.server_instance===resetFence.server_instance &&
++       d.visualization.generation<resetFence.generation)return;
+     guardClearedTrail(d);
+     latestTelemetry=d;currentMap=d.navigation;
+     lastServerControlTime=d.control_server_time_ms;lastServerControlReceived=performance.now();
+@@ -2197,6 +2241,7 @@
+ 
+ 
+ function renderDrawingSettings(v){
++    updateDrawingStartReadiness();
+     if(!v||!v.drawing_settings)return;
+     const settings=v.drawing_settings,form=byId('drawing_form');
+     if(!form.contains(document.activeElement)){
+@@ -2210,15 +2255,67 @@
+       'Đã xác nhận '+(v.completed_corners||0)+' lần cua. '+
+       (v.corner_pending?'Đang cua, chờ LOCK_OK. ':'')+'Chưa đo tọa độ thực.';
+ }
+-byId('show_drawing_start').onclick=()=>{cancelDriveHolds();byId('drawing_start_form').hidden=false;};
+-byId('close_drawing_start').onclick=()=>{byId('drawing_start_form').hidden=true;};
++const drawingStartDialog=byId('drawing_start_dialog');
++let drawingStartBusy=false;
++function updateDrawingStartReadiness(){
++    const d=latestTelemetry,v=d&&d.visualization;
++    let message='Đợi dữ liệu server.';
++    if(v){
++        const m=v.motion_pwm;
++        const age=m?(v.snapshot_monotonic_ms/1000-m.received):Infinity;
++        message=v.environment!=='real'?'Cần chọn Xe thật · USB.':
++            d.mode!=='LÁI TAY'||d.mode_pending?'Cần LÁI TAY, nhấn DỪNG trước khi đặt lại.':
++            !d.mode_confirmed||d.telemetry_age_ms===null||d.telemetry_age_ms>=500?'Dữ liệu Mega đã cũ; chờ cập nhật.':
++            d.action!=='STOP'?'Mega chưa báo STOP.':
++            !m||age<0||age>=.3?'Chưa có MOTION mới. Server cần phản hồi PWM bốn bánh bằng 0.':
++            m.auto||m.wheels.some(x=>x!==0)?'MOTION còn AUTO hoặc PWM bánh chưa bằng 0.':
++            'Đã nhận LÁI TAY, STOP và PWM bốn bánh bằng 0. Kiểm tra xe thực rồi xác nhận.';
++    }
++    byId('drawing_start_readiness').textContent=message;
++}
++byId('show_drawing_start').onclick=()=>{
++    cancelDriveHolds();
++    byId('drawing_start_confirm').checked=false;
++    byId('drawing_start_status').textContent='';
++    updateDrawingStartReadiness();
++    if(!drawingStartDialog.open)drawingStartDialog.showModal();
++    byId('drawing_start_x').focus({preventScroll:true});
++};
++byId('close_drawing_start').onclick=()=>drawingStartDialog.close();
++byId('drawing_start_zero').onclick=()=>{
++    for(const id of ['drawing_start_x','drawing_start_y','drawing_start_theta'])byId(id).value='0';
++};
+ byId('drawing_start_form').onsubmit=async event=>{
+-    event.preventDefault();cancelDriveHolds();
+-    const result=await mapRequest('/drive/reset-estimate',{
+-        x:Number(byId('drawing_start_x').value),y:Number(byId('drawing_start_y').value),
+-        theta:Number(byId('drawing_start_theta').value),confirmed:byId('drawing_start_confirm').checked
+-    });
+-    if(result){byId('drawing_start_form').hidden=true;byId('drawing_start_confirm').checked=false;mapMessage(result.msg);}
++    event.preventDefault();
++    if(drawingStartBusy)return;
++    cancelDriveHolds();
++    drawingStartBusy=true;byId('drawing_start_submit').disabled=true;
++    byId('drawing_start_status').textContent='Đang gửi yêu cầu đặt lại mô hình…';
++    try{
++        const response=await fetch('/drive/reset-estimate',{
++            method:'POST',headers:{'Content-Type':'application/json'},
++            body:JSON.stringify({x:Number(byId('drawing_start_x').value),
++                y:Number(byId('drawing_start_y').value),theta:Number(byId('drawing_start_theta').value),
++                confirmed:byId('drawing_start_confirm').checked})
++        });
++        const result=await response.json();
++        if(!response.ok)throw new Error(result.error||'HTTP '+response.status);
++        if(!result.visualization||!result.navigation)throw new Error('Server chưa trả phiên vẽ mới; kiểm tra đã khởi động đúng bản RESET_V1.');
++        resetFence={server_instance:result.visualization.server_instance,generation:result.visualization.generation};
++        stopVehicleAnimation();smoothedVehicle=null;vehicleTarget=null;
++        mapPan={x:0,y:0};mapZoom=1;
++        renderTelemetry({...latestTelemetry,visualization:result.visualization,navigation:result.navigation,
++            control_server_time_ms:result.control_server_time_ms});
++        drawingStartDialog.close();byId('drawing_start_confirm').checked=false;
++        mapMessage(result.msg);
++        byId('canvas3d-container').scrollIntoView({behavior:'smooth',block:'center'});
++    }catch(error){
++        const message='Chưa đặt lại: '+error.message;
++        byId('drawing_start_status').textContent=message;
++        mapMessage(message,true);
++    }finally{
++        drawingStartBusy=false;byId('drawing_start_submit').disabled=false;
++    }
+ };
+ byId('drawing_form').onsubmit=async event=>{
+     event.preventDefault();cancelDriveHolds();
