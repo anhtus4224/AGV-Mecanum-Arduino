@@ -1,0 +1,63 @@
+AGV_CORNER90_V1 - BAN THU CHUYEN GOC, CHUA XAC NHAN TREN XE
+
+CAN CU:
+- 80cm: 6.68/6.75/6.69s -> TB6.7067s -> 11.928cm/s.
+- Khoang sensor-tam lay145mm -> runout1216ms, chi la moc khoi dau.
+  Chua xac nhan phep do da co lay da hay chua. Vi tri bat goc va troi co
+  khi co the lam moc thuc te khac1216ms. Can hieu chinh tai goc that.
+- Video phai/trai la Serial Monitor, KHONG phai video chuyen dong than xe.
+  Khong the do goc90, toc do goc hoac do troi sau ngat PWM tu 2 video nay.
+- Phai: lenhE dau74982ms, cuoi76827ms, khoanggui1845ms.
+  Trai: lenhQ dau29322ms, cuoi30666ms, khoanggui1344ms.
+  Khong thay lenhS, HB sau STOP van lastE/Q. Phu hop voi failsafe700ms
+  trong code cu; do tre nhan nut khong the quy het cho quan tinh.
+
+THAY DOI:
+- Base la ban SMOOTH da gui, giu pin, LOW, REVERSE_SENSOR_ORDER=false,
+  sonar va thong so ne can theo file ZIP ban da gui.
+- LINE_FAST_SPEED, WIFI_MAX_SPEED, RUNOUT_SPEED, TURN_RIGHT/LEFT_SPEED=255.
+- Timeout WiFi Q/E180ms thay700ms; F/B/L/R van700ms. Lenh trong video
+  lap lai khoang80ms. Tre mang tren180ms se dung som (chu y khi thu).
+- AUTO ngat xoay truc tiep, khong doi WiFi/failsafe.
+- Goc phai: m+r1+r2, !l2; goc trai doi xung, xac nhan2chu ky.
+  Mot mat ria KHONG kich hoat xoay90. Hai ria cung bat KHONG coi la goc.
+- Tien bu1216ms255, sau do xoay1muc255, khong pha xoay cham bat buoc.
+- Chi cho phep bat lai line sau2mau trang, da thay phia donline,
+  qua MIN_TURN_MS200, roi M bat va hai ria sach2chu ky.
+  MIN/MAX la gioi han thu, KHONG phai so do goc. Mot thanh khong do goc
+  than xe, nen chua bao dam bat dung nhanh trong moi bo tri/tinh huong.
+- Ngat PWM0 ngay khi chot, kiem tra lai sau80ms. Neu khong con M bat va
+  hai ria sach: CORNER_FAULT LINE_MOVED_AFTER_STOP. Khong tu xoay vong.
+- Qua4000ms khong bat line: CORNER_FAULT SPIN_TIMEOUT. Neu gap can duoc
+  sonar truoc xac nhan trong goc: dungloi, khong goi ne can khi dang xoay.
+  Sonar van co diem mu, khong chung minh toan bo vung xoay trong.
+- Chot xong giu khoa nhan lai goc1200ms, tang toc lai qua dieu khienmuot.
+
+NAP VA THU:
+1.Luu ban dang chay du phong. Mo agv_corner90/agv_corner90.ino.
+  Mega2560, dung congUSB, Verify/Upload, Monitor115200.
+2.Thu1goc that tren vung trong, nguoi dieu khien san sang dung.
+  Nen ke banh de xac nhan Q/E dung chieu truoc khi thu tren san.
+3.Giu line3cm va sensor2.5mm nhu da chay on. BatAUTO bangM/nut31.
+4.Gui log >>CORNER DETECT_RUNOUT, SPIN_START, CENTER_STOP, LOCK_OK/FAULT.
+  Quay kem CHUYEN DONG XE trong cung luot, ghi line truoc/sau xoay.
+5.CORNER_FAULT dung va giu trang thai; M thoatAUTO, cho khoaM800ms,
+  dat lai xe va M vaoAUTO. Khong reset khi chua luu log.
+
+HIEU CHINH TIEP:
+- RUNOUT_RIGHT_MS / RUNOUT_LEFT_MS tach rieng de chinh vi tri tam.
+  Tai van toc da do,100ms tuong duong khoang1.19cm (khong tinh troi).
+- LINE_MOVED_AFTER_STOP: cho thay chotline roi bi truot qua, can video
+  de chon diem ngat som; khong tu y tang runout de chua moi loi.
+- SPIN_TIMEOUT: kiem tra can tam, mau line/tin hieu, kha nang batnhanh.
+  Khong don thuan tang timeout vi co the bat lai nhanh cu khi xoay xa.
+- Chi bo qua delay180ms khi app duoc sua de guiS ngay khi nhan tha.
+- DienapA5trongvideo dao dong~18.6xuong3.9: chua ketluan pin tut thuc.
+  Nen do doi chieu bang dongho; nhiu/ADC/nguon lam ketqua khong laplai.
+
+KIEM TRA:
+g++syntax voiArduino stub PASS; 11nhom mo phong PASS (trai/phai, runout,
+chong bat lai som, timline, timeout, troi sauchot, vatcan, lenhS,
+WiFitimeout, giu thongso necan). Sanitizers PASS voi leakcheck tat vi sandbox.
+CHUA buildAVR, CHUA nap/chayxe. Day la file day du de thu, KHONG phai
+ban da hieu chuan90do hay bao dam chuyen goc thanh cong.

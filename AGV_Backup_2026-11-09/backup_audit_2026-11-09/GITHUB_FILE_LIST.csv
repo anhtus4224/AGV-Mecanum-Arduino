@@ -1,0 +1,275 @@
+path,bytes,sha256,priority,note
+agv_190_diagnostic.zip,10330,84cc7769bffe0663292fc4c347a06a65616671d3270b537a92c544f04a5f12df,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_190_low_adc.zip,9822,cd05fd72011800bedae88373a8bf7d2f08c31f6c625c3d758b7099fc2eba67bd,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_chuandet90_v1.zip,9566,5cf45270d7a5d077aababd0bdc14c6e8a2ef123e2e7b357e4f6b35d651a98f44,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_chuandet90_v2.zip,11417,b8b100b7059f357cf40cf5bbbc198c8ffb9858b82c1ad07e4a94f6a3715ce70a,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_corner90_v1.zip,11738,f6436464e41b30e35491ce11f132c54b400fd23e948ee9eb8f8527c238aeb607,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_mecanum_190_v2.zip,10864,297c9fee2ff71cf4eac1a485fabadf2de39f14cb9bae2ea1044c500f45c7f569,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_mecanum_190_v2_low.zip,9788,f8bec7fe4ced496405f02961f238acf473b1bddc47b0cb5a068bd0cdc6f15cfe,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_mecanum_chuan_190_fix.zip,10389,c0e7dcccbf3528d630252bee6ee1f8d6d4fbb3557e89babb8bd1b606d1b5a9ff,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_mecanum_smooth.zip,8682,ef5446ea9db6855c399b956233053b0e759650d02370dd797e492332212e26d6,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_motor_lock.zip,620,3389037e2a3a84a9ec0352cb151e5656c4f1c9600aa405dee4fbfb1a859e9b58,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_safe1_repair.zip,28643,fea37f676359a69ec73566ef86c6e770a97c2ef8842a11aa1e82308053166336,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_web_safe1_final.zip,23228,f13e254ba75e8365fc13ae8eb9d69bc06bb9d13f5536a10b5253f687cc6f93cd,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+user_firmware_confirmed.ino,33313,38bdacb061529c72d6bff7b62f23e8799bea17d0b20a547583e0b4eaa2a44e2c,P1,Baseline người dùng gửi hoặc sketch khóa motor dự phòng
+agv_chuandet90/agv_chuandet90/agv_chuandet90.ino,32577,64f4ab703d976d87c1ca423037eb9cf6bc74270a3b6ca35ecdd620937a5f1fbd,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_chuandet90_v2/HUONG_DAN_V2.txt,2271,a40a92e5a4df48f1890a7cd1133bcc1a900da1ab462f4db319c1068581c8dce3,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_chuandet90_v2/agv_chuandet90_v2/agv_chuandet90_v2.ino,34300,7be5615cbe9c3218fbfd135876bdc3e2189f0ffa29d059bcea4a703fa1ddce16,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/ArduinoTest.h,1580,2dd20174c9cbfcd7b0fa9fdf5e20aec2cd9255f4956aee7ccdb76d9385338a2d,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/dashboard_check.js,14138,ba08f804f210a3bfb01788f6a932412bbfd723a64441c8766ef8c5f9879d1320,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/make_fix.py,6641,91fd9336ec910e821920dd3ebca17c9ca0fe4adbd625565b5e8a81814db56336,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/normalized_server.py,60613,2dfc68d8fcfcd2fe7d1932a7df49b3d00b54ab1a8aa07b261a1cdbfeacb9e03a,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/original.ino,33313,38bdacb061529c72d6bff7b62f23e8799bea17d0b20a547583e0b4eaa2a44e2c,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/original_server.py,66498,90140590cfae42b96943f801a20b719e86047fcfb4d2339a6718c8a6c1018f56,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/test_firmware,1352480,7178752a886c23d58d1fb57994e2af0e292efac6f327350061bb16ae25e9ddd2,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/test_firmware.cpp,1466,04990ead26ad3e6c3b5e01882d2241f757b9cb6797cbc32aa2616a60575d0f79,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/test_server.py,4492,99b409f259248888376dc832d426745aa6710e62512dcb73b9ee135b22d8050f,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/chat/agv_mega_safe.ino,32744,1303975de9279ac065f66097e41b11f053888480acf2b3f53d7b77d0e6b5b278,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/chat/agv_serial_link.py,6255,8b66442da4f62152afee805e9f5058ab8bbf105cae91bcb9fe87cbb3607e30d8,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/chat/install_server.py,881,b2d078c3b675be27f2a2debc5606e5594be2123346a16a55b16994f15d0b97a6,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/chat/stream_server.py,33858,6cd72466f21ed57627c02373281141321c39c11b79623a912cc7cd5ec4575574,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/chat/verify_link.py,1282,402e69e3d6579e59958b3e1ab9dae01356d194c59fd51f737dbf6b3f6c31f196,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/chat/__pycache__/agv_serial_link.cpython-312.pyc,10247,70fe30d63e60d78e3cf95888ef8c119281ae4e9028d0528bf0977130d98b4e7a,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/chat/__pycache__/install_server.cpython-312.pyc,1667,fe97a38af4ab727d85673813f87a575bc15717b860395d183de93ceb2c21b499,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/chat/__pycache__/stream_server.cpython-312.pyc,40613,61e9047919164583f8226e560395954df30787ca1483f25f286f0cdae0e88503,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/chat/__pycache__/verify_link.cpython-312.pyc,2196,7b5a7922207acab06a07ea059d07c8bae413b3b846ce0ae3b48c33883feacada,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/fixed/HUONG_DAN.md,5583,a509e56fe6347524beb52174981a3be6145c6462e9f89455ac9ca2007f558e32,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/fixed/agv_serial_link.py,6262,591cccec75b4999e88c15ce4fcbe8346e47aed18bac1e628ccc217aa592ae243,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/fixed/install_server.py,881,b2d078c3b675be27f2a2debc5606e5594be2123346a16a55b16994f15d0b97a6,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/fixed/stream_server.py,46221,dcd0352b9c3392848095a0d70c1112f2fce36df0e39d31e01409382aac918639,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/fixed/verify_link.py,1282,402e69e3d6579e59958b3e1ab9dae01356d194c59fd51f737dbf6b3f6c31f196,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_connection_repair/fixed/__pycache__/agv_serial_link.cpython-312.pyc,10248,ebbbf182d3f6c50e50200f25a01007bce90062d96a466fe5bc7ecd6749ff203a,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/fixed/__pycache__/install_server.cpython-312.pyc,1668,bb24437d5cbb32fde6deeb7dc4fe31c57a695bc0583e0da9a22d68ac59080c9e,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/fixed/__pycache__/stream_server.cpython-312.pyc,46669,5f9f7a508770d59cdaa7886c99e194b08068082dd5dcd743923be3c68272e3f8,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/fixed/__pycache__/verify_link.cpython-312.pyc,2197,850b46e65a538f45c07a76594c72c977a77b5e0c807bc7a9dd8b555a6a73955c,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_connection_repair/fixed/agv_mega_safe/agv_mega_safe.ino,34879,9796f78671c39b6fd813872c20359800dcd690c55e9871163dc9e4a4415b2364,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_corner90/DOC_TRUOC_KHI_NAP.txt,3631,d1f777e55e94b99ca340bb79616877d1971412e6ab79d395a6d6a8cc628cbe8d,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_corner90/agv_corner90/agv_corner90.ino,32817,a1ec50313893d7f65c6bfd2a1b782acaa5ccd999e3ace422bc64e66b64b544eb,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_delivery/HUONG_DAN.txt,3226,f9913bbdf743998f78f36b8a395737acc5ca1885d79ad09da52441f8d0e5cdcd,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_delivery/agv_mecanum_chuan/agv_mecanum_chuan.ino,30241,5300c60e5e32792ce7e7ab85da78f8e70d8c0f67157f5dee22ed7b1051e5f462,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_delivery_low/HUONG_DAN.txt,1285,6fdffd146479b5cffc9afcbca37313242ea6f456bcd262e8cca07c36ae8ee918,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_delivery_low/agv_mecanum_190_v2_low/agv_mecanum_190_v2_low.ino,30666,5116af672677856e1665a5276ed5af130c672b6695c57d842a7f5fdfe2500822,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_delivery_v2/HUONG_DAN_V2.txt,3785,3bbf47c9f3ce08f0cb727a5a0895c40d768cf490d0f4b59ee25828d23f156804,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_delivery_v2/agv_mecanum_190_v2/agv_mecanum_190_v2.ino,30621,fa3cb7945b71dfbf9b0dd02deb89c2e964c5d7737ced10238f613c34700dc96a,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_diagnostic/DOC_TRUOC.txt,1789,0f5e8adab02a64d7760e8813da94463dfc8ebb72a72a0f79f7b5c9ca0cf8d3e9,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_diagnostic/agv_190_diag/agv_190_diag.ino,32180,1a10771db31b0fd7a422d3abfc5cff00dca4154e241fad61391550bb5d214159,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_failure_frames/001.jpg,11090,405c02524bc7ca3b83dfaea56f8fabb5590ec4111ab21569179f16efcdab15d6,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/002.jpg,15818,1faf51050d324480326fe7ce1bf05cc082ea466f2a810e9697c5fd62609ae8cb,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/003.jpg,15822,1e6c048f64ab89cddb615ab20be9038c5dd22ee519de48d9dcf5e14e0c86f8c7,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/004.jpg,16115,f446b903123fbc3ec222dbba72188e05e7cc43110613aaa6621442870c4b653f,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/005.jpg,15885,ff79b8ce7fb9deb9d794fcc02462a6a499e2a4828a6b944fd66d8b9e454c34cf,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/006.jpg,20440,b3e4c7c27bb6c0a52d3d4cc1600ba5d18c863c854c0cb99b3a036969db1af57e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/007.jpg,22136,33c8be4cc919366e7ddd396579950557ff3c7e660c14249fbcc4ccc611e84a4f,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/008.jpg,18185,fcb320a4cb1ceb365310f0101ec33c880e47b54f33d9b22cd115614662be14ee,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/009.jpg,16043,652bb155aa62eea6db86d513f1f6128fb63904b9a148c4136ee9eff86d267540,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/010.jpg,16956,5f664917386125762ae90679ff13072f2ba5756623460f0de424768884c5cff6,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/011.jpg,12164,13949643bf7498fed23295b09746c67333ac38598dcf09b36da498c4cb7bd00f,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/012.jpg,13450,f92a5a11106348f5056a816e1df7472f2aaa943753d5e693ec1a403459443fa6,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/013.jpg,19015,0b2980bdaa1b993b8dc8c726a1d606f561d68a1e479866e9b5e3b50d5a2743a9,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/014.jpg,20527,70fa6b4e7dd401854c6465409fa5c7004bebecd4f845baa7c91e91e5ffde2687,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/015.jpg,15688,120cf53ff8d09080eb7de4f58be22f79bdf14fb11011323814da10e361786d95,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/016.jpg,22048,1a1134c0546640561cf823e0fdbb481c70bf96ef3c8298ef83a19c56c77b01ec,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/017.jpg,19445,0cf447fa411eaab4b61ce148bda61a511e13278fd55ad2f391916f03a111e60a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/018.jpg,19642,270fc1dd29495565cfb7122257ae01ab9e4070cd16dc117f682ec148d285e3d4,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/019.jpg,12854,8668580989efa477feab6d9cac743c20dedd15d1c45f2c6d9a7e43c232266bf3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_failure_frames/sheet.jpg,221804,c21dc354b5547f4346bc1aabcbe1dec49ec6f77227fd807ca2cf30aa8a729804,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_four_sensors/extra_pins.h,206,919580fc04dc9c11ef3676a6a63fa37f8cae8f6ca31a039dc73645c3bc56693f,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_four_sensors/test_4_thanh/test_4_thanh.ino,1313,37d0925fc688ed1e33ebcc15a077a8216ae3b16d0f00b858241451c415411e1e,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_low_adc/HUONG_DAN.txt,878,9744a657aa94d350546170a7ead6dcf593e182ce59d0db78a71327ab0e868fe8,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_low_adc/agv_190_low_adc/agv_190_low_adc.ino,31382,a355a24d602fba0ff98d8284498833f8ba31b1d9f6fded17bed9f5fec4ae6c4b,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_motor_lock/test,17080,ca33dd2a39091c8be6809ce2abf4ab37e659f62842cf4b491df7770136662cc8,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_motor_lock/test.cpp,361,657617c748b74ef14f6d425e674b005253a7374607c42a8dfa40ab40b1231beb,P1,Baseline người dùng gửi hoặc sketch khóa motor dự phòng
+agv_motor_lock/agv_motor_lock/agv_motor_lock.ino,819,c9aefe1983774b942daf9424d887fa3ae964429f32e9fb5e66cbe839d7a6a513,P1,Baseline người dùng gửi hoặc sketch khóa motor dự phòng
+agv_smooth/agv_mecanum_smooth/agv_mecanum_smooth.ino,28949,3d1e361f069309a1a19e746a07dc5f00dd0ca50ea6a20d252160f11d41be8b6a,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_turn_cal/left1.png,335088,e96115fef9f77f63abcbff1490cd0ba3951ca701d981db13363e817ac7308998,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left2.png,341908,31beb9be5215a3dd37b24229996b3a0b422be5f48882beea0365f196e7506386,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left5.png,339624,5b2ba5b4ec4232180e5f7f7a042f641a5502e6277721a0d2ed04cac7f0aabcaa,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left6.png,362449,464859e3d626650c90e142d06b70f550454710043e1a0530a7ef6f74a6661e48,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left7.png,363041,f9b68c7c002d64d10eb727cd2ee08be28f7df3a8f9e4323e2f27b553fedb1461,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left8.png,372901,550f80eea49aa13e7aaad9e56cccecfc9bcc68984db2b7591293690c6df98636,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left_sheet.jpg,61293,fb72c8fa1ad839a37546ca2735109eea7dafabf7fac3a2fea67ab3c41babddc0,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_sheet.jpg,676462,ef104522fea1cc3010c5e62afec33b9525fc8a522f5767019fa26ec5b3568ecb,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right1.png,337747,5d431e5a46530e8a7b1f167f9b8838b54cdb7d43ba01e567cb2453179aeeeb72,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right2.png,342854,75a4fb1161855666e052f9c417bb4cd1313684605299ee9c190e260fe7ce778e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right4.png,365207,7424b965a8f0d3dd9041e5dd1e06767bb71960069551a02a25926198f9a9817b,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right5.png,342315,1f142d1eb9835ee45c6e599a1b89da0eee030aa5ac3e28fc5b920f2add3a8d47,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right7.png,346084,73c9cd270bb62ef221d3785757c0c9cb1044f62ba1ddd8f3a985a21268e14834,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right8.png,344412,e509e161ce998d4079380bfdc38f318f86546b2b74ade5507a565af9710fd86b,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right_sheet.jpg,62156,238ee0ce1475a43e593ca6bebae7026ea1bd2399aab95e9eb5f86cedec0b2d83,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/001.jpg,5702,76d226c1e03262960303168ea4291ea6224a2772eae91d4d4e90296ac0195069,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/002.jpg,8575,9415d04d74b7367a52f0b293fce1ebd643e333a142281d3847d2076ae49a209c,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/003.jpg,8544,fe4bf433ab8b79e42dfbeebdf2c3eaf73d265c7337613930ec9f9eb53f401300,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/004.jpg,8585,ff333fad40515a29b0eb726c208ce54000ff6873e6c1404008bdf92097719114,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/005.jpg,8567,886af3cb326a25bb2737c6f63db930c363f09a897c9a0a490e7dbea23aaf5a13,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/006.jpg,8316,a4d2759f8c3706b42544ed1c1bd31615a471e172855c5d820cfbb24ea8cf16b2,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/007.jpg,8334,525324135f20a7033ea15c6f4f7061ee6f593852ca8e7aa23989ed7c6d2488f1,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/008.jpg,8689,86527af9027901b94291f95a7429b1d2bba6d1ed945e603b48d84b57e14bd72e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/left/009.jpg,8569,61207c24f35d14523a2c9c4b83ac5bdb8984b163163c7a899ba49c180a7f8340,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/001.jpg,15124,89f08b743012439d065666b752d34bb1d754403a7f5a72b0b1f8d6db4b1d4375,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/002.jpg,17080,6a5b875104b37d6f3c6c42ba274dd8fb309a00b63f5dfbe79692f2e841539cf1,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/003.jpg,24228,598c4ad1851c45afd807341df52780882635359548acef25429cd3247cad22df,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/004.jpg,26097,553a621cf6cc692c6a8c9768a01a868ef883fa0c2ccde6fe78fbfa32e0a75bcf,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/005.jpg,26831,286684ad32ef4dd29c06f632de514fb8465d826eaa08d3911a6f4e0d1aee493e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/006.jpg,21875,c4d244824c2cc640ab12e1bcf2396fdf71f149dc7c210b896c786a223a75cdcc,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/007.jpg,28645,685bd9d35f2e49ae33c54d027fd87e9975edb7297614f095fdadd48a8c6886ef,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/008.jpg,23757,fb83cdf7826e210f1333daa7dcdfff98b3f7d303a8ad40534449c37a146123c4,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/009.jpg,27038,6715c48a557d7942209274c18f98343b4ee36e030b473ab2bcccf4dd580490b9,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/010.jpg,28261,8756f9b385c86fd51f83ad3fafc8f3e90059ac334f8d1f6d97dfe03325a6e11e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/011.jpg,20577,0df23053cae9349d9379061cdaf37a3f1442ed2f38d6f9c12e6ced1f3de4b89c,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/012.jpg,18679,7d2e8145cfee5f47d58db3b0d1629233f0eabe0b6237fd1c9aff092cffb1248b,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/013.jpg,17533,6ff912050e500c1380dfa4eb4bc8b3d1a61062f58b8e45ed2453880c6d6414fb,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/014.jpg,18440,b4ee6dd6ebe9735bba78d9423f2ba6708bfde53fba24e07e348e5eba482a2fc9,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/015.jpg,17350,e5555596d40ab2bc6b81342e565cd51fbecb811cc4dcacd6a5ba2a9510e32a11,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/016.jpg,21369,6a627d72dc2d6249eda943c4edeffc7d485b2cd4f5c0f892dc1a8c4c5c227f2c,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/017.jpg,18042,60e21667bde7aeff1ca88779999618177019472d306b1719ac39257fe4cfd424,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/018.jpg,16757,1d4660438be5b878db6cde01920723c98ae7516afaec38c82e648809c0e3875f,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/019.jpg,16644,f014c3fc2c97a4c39fba5ca70dfd895e357f839ec91841950b8a68e74762fb4d,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/020.jpg,16033,250e0a4763f6d84dbcbcf4534263d314c3a8727488d943fe801a043551187c31,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/021.jpg,13654,d78f16638a73bdeb3dd72adbd39722c6041e7e82a856a7e73063db129aced141,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/022.jpg,10660,0c9b293553961b3abfde1d343e9aed2fc92cb88197a9e2ec913097bc33d79c2d,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/023.jpg,13867,6e7a2bebec89f6bdd1a2bce6b86c52d5552eefccdf5c8837fcc5bb782b18f2fd,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/024.jpg,13708,68029e9d360b2e0c2542e2c3a9378658ac94dbd47592fcffa8b03382daf019d1,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/025.jpg,11464,2869e0ff31d36c31155e3d28b8934f1f795b474bca8644099b760ad7e25a263e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/026.jpg,13961,7b7393d43c49fe4002edbfbfe3e3400cc10709e0d3015a098fe232aeae705ced,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/027.jpg,16119,ef4856e2fa094d0bbddd035e9b48ec50b3954d65fc7f5b27478e5fed8cfb1cb8,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/028.jpg,14049,fc782404b6a269f82d56e80d32724a38b3294b4a32e5b539a671f0bed9bcecd3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/029.jpg,14096,3a3b841f7edd0bccd83951c43894b4fb12c8229f434242cfc01e56afbf2d0bac,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/030.jpg,13480,d9616e38f63d7f24fac645a35f81fd3e2cefe2a6f367c0ee272283891fa6dbb7,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/031.jpg,15201,bea206299305d13225243b6f0fc87db84a3a86444e5f42878c030cacfad696e8,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/032.jpg,13291,37a4d9833e3ac9113647c28001f2f9410f3dd78707224aa4ed48ff66e106480e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/033.jpg,16009,cee7a618c3e785fc5e781d17f27f9022c41149bf4c6540f692191674c5536af3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/034.jpg,12803,c85ab502ed6f3581dc40b492c28d21a9cbd28ce8a2e174a171a70ae432481a33,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/035.jpg,7588,2d9be705597a8071abcd203f7f1aef2232766db4f2d1d5514397f61b2db0fad7,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/036.jpg,10054,d5ec6b748d94aee555cf036aaa63750f72628a9c6b407bfb4ccc749d27a427d3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/moi_frames/037.jpg,13504,6de1a2348cb6a42dae5c3e64d215a00e9c3c7457914ac754f1f6f63007e90186,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/001.jpg,5683,9df5206ed51670b929bb0d57ce57fedd674f5a1dc15baf7c7fd9600465fd02f5,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/002.jpg,8503,d286bc54ad7a990cd1e77cfb23fb13a0d1d4e168c5e107a25defbea3c218e971,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/003.jpg,8325,07cfb51b6f0a3da5f0c85f7fe1abeb0fafe40f9d8562e9aae7923dd89350c22a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/004.jpg,8422,c18c90aad4ae41c87a73cd92914cc367f600c75238637883d367b4b36b10256f,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/005.jpg,8351,a7884f3caac3e5caf9704d3511d17c3f9334f9d96269ab71ec16259a761ab39d,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/006.jpg,8743,7f8886511b10042bb41ed35d86b05342573f55249ddae7d44c303c84ec2c830d,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/007.jpg,8614,15ac00a8d59d904a32cc38c1f3ded57f8a9abd842666bd4a7077e00d7819eb99,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/008.jpg,8637,df40d5b1bfb557dba582e7777d09a70ef77f7c17270fcbd7a70db9c98aaf54cb,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_turn_cal/right/009.jpg,8664,09588212375546814c9c99ddef643d72f108a75043666d37055dbd1b1255d915,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_validation/Arduino.h,1239,235994bcb449628894853397ef6e8f0916749c1c3137d06d60394d41d0794e12,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/current250.ino,31340,7ed792ace01123ee1097011f57d1079d69ef42a613b328d04578c2d9ae385b04,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/from_chuandet90.py,4182,28b55a0d8873594dfaea762bbd5683636ba3136d1f283b0e781dc5433026dbc0,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/make_corner90.py,7860,cfe5f687941589eea84d2d480cf3df44e4eed36957dce147bd6285eb770cd3b6,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/make_corner_v2.py,4624,3422e850e2cc579a821e8af6220c50b18cb344f8f95dd0daaa52c5f8561cca7d,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/make_smooth.py,6236,af36b1dd58fed1934b6b9673e65314fa9297c7aedd35032b4dc223045f994f3f,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/patch.py,6504,0fa2659110f4d71d86f48a184e8b42b35a181aeb54a90113810f6f936f46c8d2,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/patch_diag.py,3295,6fbd942d2039689f0a05340b30769d26388774ddc414e75b6a05ae4c81f075f3,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/patch_v2.py,4920,5ae3e987f4c3311652b413eed845a4e229ec308f16af9ed781d7396fd605d939,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/reuploaded_chuandet.ino,31340,7ed792ace01123ee1097011f57d1079d69ef42a613b328d04578c2d9ae385b04,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test,185600,a1374c9cca741bf5f9230d27a5d8df5807864d5fd23b9d453ad2e158b1c927d1,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test.cpp,2948,66db8dafb6d0986382eb486fc2656b32be7f76b1ae59cb033fd2d469843d40af,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test_chuandet90,201624,84389468912f87934bf004a7c5a88c62f3f2bbc9401a90389f95aab0de9da154,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test_chuandet90.cpp,3113,72de5609ee25ea80866ad47d196a5b3bf6e08b0ef833f694499a24394c5c8e28,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test_corner90,199264,f37542a90d5220102b3f114b931dc6af49983fea711108afb45637a1f62121bb,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test_corner90.cpp,3107,b85ae9a4d5855e008835fb6776dea293e75d019a07c95aca3dc0d25d9640fa99,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test_corner_v2,215608,9a553dc110a1b97e01962421eb65da83fc6b7f33ba56db21407fbd04f3e72eaa,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test_corner_v2.cpp,3537,6b9e4a4b9d5edf123841ca6094dfa8c5c79a0571bf772d977a7bcd9e8821a03f,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test_diag,201192,de39dec097c8754f5900888fafd18505515c7a04062959506a8443414930e23d,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test_diag.cpp,3791,6b3519ec2ca66dc6d7f20ce48276baff18d70d7435d209af7f4f6c0a19f7ae47,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test_low,193432,8319c7ba5d05b66fa10ab5fca3f507f39ac1a713e4b2aaeed36b944c39056c28,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test_low.cpp,3470,f2f1509aec32efb10b6e4f5caede0955019889a70acabad811127a91f284b8b2,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test_low_adc,201264,2faf13763960e31d0db64bf39644a7654b804a4ab7b29cc086c9c59f99d47ca0,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test_low_adc.cpp,3451,06ea49fe6b3668015fbba6eb86b802b47d831f8cb46fed204009b5caead52a65,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test_smooth,190224,68d43fd52ba227bde7e0e0880da461ab1da728eb16f19d4f66086011b52cd7c3,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test_smooth.cpp,2783,0e95d623a7e97506c46a2cee53c084eaa857c773f12cb8f705304a64bd82d91a,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_validation/test_v2,190880,10c38bbc893effafdbad8c84d5af8c37ee4fe926b7c8589cf79b9d4dba909304,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_validation/test_v2.cpp,3337,e29ed87e6a75bc7b04013d1ede3e3ad4ba650e8f4f757d762ec6bfca200aa105,P2,Lịch sử source/test/tài liệu hoặc gói phiên bản; giữ tách biệt
+agv_videos/cua_sheet.jpg,137347,005b8ab9dccdbcbc12a758ef9d1f67b8376e1c82140e5f24abf235b8241ef16b,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_sheet.jpg,219054,bf6348db51219d455bc72d8cc59d80685e871c0a2f6f6ab11d9e3d7c5ad0c44f,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/reference0.mp4,22136787,4c97ffee22587ae8a79e7feffb8a6e66e8051d516767fce865295987ade17566,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/reference_curve.jpg,137659,10ccd1b2e28c9e9a5d97535d38dc300a906f84eb8ed878fcae9e8de58bac6321,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user0.mp4,13789259,d616cc2ea97418d20c2817d6012da5872252ca54b46c9d2efa3dc8e0707a99a5,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_curve1.jpg,162352,38982c12dc4331114d5775780c8ea0131afdfd908138d34121d81595da8c299f,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_curve2.jpg,172438,91edbfe63d40b305b85eee018bc1412958b79637ff5843610e9eb4202032d259,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_sheet.jpg,312447,df5f4416200cfb910fe6b258701519ce0860df39e687ff60d5574885866ca6f6,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/001.jpg,5689,94be2c9b38eaa62c0710db37c70a733d57860fe13cc3384ae24880479f3aab3a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/002.jpg,8343,f19127600bba5c582dfb0823f1ea84773d27d30777730b5e98a222758ead50a1,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/003.jpg,8103,e97ac2788fc7f5c959052d02c25655a0950fde3c3092970dc37c84d35430cbfb,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/004.jpg,8708,782e9407e7b59ef333a5e4edf30a7b473ab00d7a3d7faca43f174fbf22138a6c,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/005.jpg,8345,630e016643e1d6cf5c934ea1d4c1cdbb840f0245e687e9e0d595c3ea7b68eb7e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/006.jpg,9223,3b8cbbd763f30c8e4d3049aa4cb1c3748b669986840661bc910fbadc82abb2e9,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/007.jpg,9865,f9cf38bedabfb5fa5fd61b966f092f3f9ae907aa11fd2ef49b540926d975b796,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/008.jpg,9875,7bb51378063591bc3b42b167ef8a425fe77a012e047d1c7818d50d0d0ee9f61e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/009.jpg,9801,ccd07cbdea0bd7a6ab28fe0fb511a84a5fe9df5da35cfe864d9b2f6152cf8a84,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/010.jpg,9934,bce369e3160d3b5af0a5071732aeb0f71d933fd6b075b55b11f421de13b7a719,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/011.jpg,9396,37713b936b32027282b1b2bef26666770a6271399ca2925867aaf5d994c8b0aa,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/012.jpg,9151,2e4701e6754efa507cb1cb50653d228a09b0b8289a3bb1508e65edba83cd4908,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/013.jpg,9348,be325ee29b6b896689f9c8b615d655ae0bd6075c37cf96ef3d05275388621245,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/014.jpg,10638,0b3a79a397f55ffe3c1858e232362d7a206fbd0c469ff4dab502cb722ae79d8a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/015.jpg,10850,2a450b6836e95b8f824c585de7d377d516175a53db383512f29026b36b962cf5,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/016.jpg,10317,3ca144163cefb681d3a47386577f47a4c39241d9102f1214e64f9f9d440e0d0f,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/017.jpg,9508,2a5555dd45a7be189728f157af1aa8cb7329383fa7c56574e46b18a1430b934b,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/018.jpg,10471,b10b1375f44e6a2b795c8584308525ef14e69c769ea301a69d1764f4174ff18e,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/019.jpg,11028,0cdae3ea7a3e4dd4d5291bd4ba3ea1c373c19a3382aae45f1d67b0d774f79880,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/cua_frames/020.jpg,10656,9b1a13795b00e894be5b106a1f77645e3046739d07744e52341865f4eac66973,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/001.jpg,102373,0ef6e329868d44e13223ff3a6dce41d98dace60255f1911642ae08ebf7c5eeee,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/002.jpg,103075,0d7d4676e1c28527359f0115258b9a30545012a0d994c210c623efe9bc3b0fee,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/003.jpg,119605,f385caf338520bf228af9d247b5bccd73d56f98abdec7737ca6a431d71734295,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/004.jpg,120057,28b88cc3b320d83cf7ca4e4cac959c0335d47a9c80a1ed09ea5f74d5f12c060c,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/005.jpg,119040,d6b396e747892455440c1a44559c51ed9648443f016ae5e8600fa435cd18f798,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/006.jpg,116497,55a4e7f77e8dea7720a4a30d3eb9be7a0aa8676ecbde43ce485b8675ec99d374,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/007.jpg,100709,537e57376eda3d859f50bc80da95368aa353e1c88ad73522a74765534c2f8016,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/008.jpg,87498,54d5945dbf43649922f44a7bf51d1f731b28420ac350e0d6a641a585b11e8510,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/009.jpg,82652,941b4afd658388e324b092bcebb3f7f36709c3f2da5a82d9a66d7b2d93e63667,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/010.jpg,83383,7d72d4835e1b10728e104a5f5140cba5a92eaa7e68f50f52b55a6a79f8cd7fc4,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/011.jpg,83952,0759ed12cecbaaa9f74a5f245082c2dd34ebe8827442980afc65fdfb450ae555,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/012.jpg,89210,9db24d63f773e7eb55856866160fafd44bd174e8bf1552e4e103bc8d7b8a0727,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/013.jpg,103316,0c0cba6390bbe8f336e1b99efcb9ccec7ed82ffe32ba0d90c3a1f05bb52a89f3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/014.jpg,117128,9b2d4984302876b008d6ebace49d16402869ae0a75328b8165e974545e1aac25,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/015.jpg,141335,003768baca2387ee87e0a1600efbc263619c10861e53d327ab1a00149b1c985a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/016.jpg,132099,0584c015c76a90e99b19c3c359adc99e6d9da162eca77437b601f776b6d78222,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/ref_frames/017.jpg,153497,d095d774a6b47b2ea7c1bcd50544b8873fdc8e3df2f0cbe1d5d3abe46d9e4aec,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/001.jpg,86127,8502e1c52b414a8d2769cc446e97d2f0e7c1e51637c05dbd29504c74c9d3c4ce,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/002.jpg,65719,9041605473f6a717d86a62d90310c309c1cc6c03ea439cf0c83245b85cb765e9,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/003.jpg,69570,4ab26757e8a3a9809472004788fd39bd823188d4d53c234a775d6518fcde940a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/004.jpg,63547,f5ae09145dec0c3d769c59fe7dbcccd8c8a3c9496234aa7d148bec08b32ef3ba,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/005.jpg,71877,131363f02232a8149247bac8a79ad4e7721ac79b080653e52e9b4cfc50691eb3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/006.jpg,70596,184859053f924ea77725213b54093a12f9dbcd6bde3d4c2bf9e40f42f7cc6ad3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/007.jpg,62988,6801397901437e0344f2c12819602afa9feb1b3679c227c7a2e6a8ff83457e37,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/008.jpg,59259,c57d3099e5531ddf4679f30b19d7274e5c89d66fea18c20fdd3ba25d0cf787dd,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/009.jpg,63005,8d0231eabb91bf435256c11a36c4d1ad56fac2894423e4ec298579295035f33a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/010.jpg,58195,bf1c90feaf907537df8dcc1f3b327e18c0296ac59c8b8bb5b36e6fb8219f1147,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/011.jpg,55955,6e33302badcb8b0d23ec2ff8510b1ffef70f93040162ac936f022ea2acfafaf1,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/012.jpg,63184,a80bf2dfeaea2983fa3cff350032ca72fc9de180fa4500c5930075df5d32f47a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/013.jpg,73077,e40484f73e58732a306a36d940c2462a1d4d6d4481ec0ab374e2b26bdcd4e76a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/014.jpg,77481,fed5980e3e71cf321f6e689105de3286af9beddf32fd1d78225aaa480c516df3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/015.jpg,75609,f632e117cdc9c35b7fc0e39a635fb7ca6d69712382beb3251098292f7ce6fb92,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/016.jpg,80441,a5b4a13074d8d06cb9ba76a7cd80b8c3ccf0aff80139570d865ffe9dac5e35b9,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/017.jpg,79161,d3b71498f5dd2a9a3e8920497c6a9c5bf614ef2760c0c722f1a5bbb7378843fb,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/018.jpg,77942,2bca057acfeb9d078ee4d13da4630cbb33ebcd21e6b02e63e99b14a258bc4fab,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/019.jpg,81623,f816b080d5aeb1e3d05b5f10b8856745e26636874936a9747435d1908c113561,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/020.jpg,80017,1f1a1442d4a36d415a04308a40dbb3610e432cf3d68b9cf85be1735f4b5e492a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/021.jpg,71459,a4cdb8a729daf644382c251152412f16cee6d9e0fa36fb57604512994dc8bbc2,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/022.jpg,74014,45aa1ba9854622a2ae1317be14626d1e3a4bf72bf657da666df06af0938abe3a,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/023.jpg,73495,95ae746bc9c87890b149b29a3e740887e0ffc02e95f5a0bffd566c8810f7d907,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/024.jpg,58018,64cbf784a0676a813772dd92cd31a3074be03165f65cb21fa11fa56cae913aa7,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/025.jpg,89885,d130c72b3974e57c8c292845759689a2bce4f11b9a2a65fb81143fc4b56cd7a1,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_videos/user_frames/026.jpg,92312,14d93d2e89f6b5bf625ba1814eb30470990d4d3b4046a332951d440833ddd7bc,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+agv_web_safe1_final/HUONG_DAN.txt,449,dc8907c61528bed483c6e11ede5cba077c1a586cf213d0bf01613d64b7af292b,P1,"Bộ giao tiếp SAFE1 final, chưa xác nhận thử xe"
+agv_web_safe1_final/agv_serial_link.py,6262,591cccec75b4999e88c15ce4fcbe8346e47aed18bac1e628ccc217aa592ae243,P1,"Bộ giao tiếp SAFE1 final, chưa xác nhận thử xe"
+agv_web_safe1_final/install_server.py,881,b2d078c3b675be27f2a2debc5606e5594be2123346a16a55b16994f15d0b97a6,P1,"Bộ giao tiếp SAFE1 final, chưa xác nhận thử xe"
+agv_web_safe1_final/stream_server.py,32632,93f438af8ca64680dde6e68a1fc07a9411b80c792c024753a8b77f04dfcd3ea3,P1,"Bộ giao tiếp SAFE1 final, chưa xác nhận thử xe"
+agv_web_safe1_final/verify_link.py,1282,402e69e3d6579e59958b3e1ab9dae01356d194c59fd51f737dbf6b3f6c31f196,P1,"Bộ giao tiếp SAFE1 final, chưa xác nhận thử xe"
+agv_web_safe1_final/__pycache__/agv_serial_link.cpython-312.pyc,10240,f8639a4b23d100ea0a992b45d2af8e6429acad8c7a56aeebaa472c4d1e4d2f7b,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_web_safe1_final/__pycache__/stream_server.cpython-312.pyc,45492,98a1680ab0a3c93a7863bf4c3e24989c04791d1947c32efdef5edec32ce6e030,LOCAL_ONLY,"Cache hoặc binary test, giữ trong backup đầy đủ; không ưu tiên Git"
+agv_web_safe1_final/agv_mega_safe/agv_mega_safe.ino,35226,a4d7bcac9b0365233155c7d4a9ce614eb5f2aa845525d282a6960bbd0a8f045a,P1,"Bộ giao tiếp SAFE1 final, chưa xác nhận thử xe"
+attachments/0e46e922-4d28-46f1-bb8e-e23a831fec74/agv_mecanum_CUAXOAYNGANG.zip,8558,37e9e6804731185a690a3a057ef00c3f60a0ee64459ecac12817c0be6ef37806,ORIGINAL_REVIEW,Upload gốc cần giữ hash; rà dữ liệu riêng tư trước khi xuất bản
+attachments/15de39cf-0d70-4be4-b4a7-21420c4e8f3f/phải.mp4,9253025,0c99dc2649253293c9d7a1394b38bf37ed9d98fd67ee79cded34aa93bf8bae5d,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+attachments/37792c73-fe46-4489-a46e-06b7ec446657/dò line.zip,13774071,e5b01182aeb23dd36a61ae5cbbe05e0fc7413602330f4dff66416f34d25ec9c3,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+attachments/40900364-2e0d-4375-bfaf-8339a7ff88d1/Văn bản đã dán.txt,8196,7f27b7d4a9039649f22d47972d8976be69d156b065b9eec58eb318b0261a8f60,ORIGINAL_REVIEW,Upload gốc cần giữ hash; rà dữ liệu riêng tư trước khi xuất bản
+attachments/4e5ee266-d085-4b56-bdd9-3bb08cf6dd33/Robot Travels a Magnetic Line by SuperDroid Robots - YouTube - Cốc Cốc 2026-11-02 21-54-55.zip,20256052,d3c28fc026dae08d3eba05ca77484ffa324178dabf0549d88ceea5dded61c436,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+attachments/6fc5d25f-63c8-45fe-9cd9-c2ca1b9b003e/import os.docx,82524,763c079cfd44134806d3454daf6f6ff114367fdcb88353f9ceb187cbc61c295d,ORIGINAL_REVIEW,Upload gốc cần giữ hash; rà dữ liệu riêng tư trước khi xuất bản
+attachments/b5273a60-93a9-4910-a234-3976eaa8eef9/agv_mecanum_chuandet.zip,9405,b615664c16065328d56a7b9be3cce3ebc6cb0853db6e51ac820b6e68eba8302b,ORIGINAL_REVIEW,Upload gốc cần giữ hash; rà dữ liệu riêng tư trước khi xuất bản
+attachments/b6d38020-c321-402a-93d9-965daf2efc39/agv_mecanum_chuandet.zip,9405,b615664c16065328d56a7b9be3cce3ebc6cb0853db6e51ac820b6e68eba8302b,ORIGINAL_REVIEW,Upload gốc cần giữ hash; rà dữ liệu riêng tư trước khi xuất bản
+attachments/bd37908c-0bf6-47fa-bc7a-53ce98a45576/trái.mp4,9414410,82bdc725597499adb2564067ccec1366078473187e143a2915a8021c900eef35,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+attachments/c63a2b7e-7d91-4b8f-92a1-4fae2b5dd4cd/cua.mp4,3738790,1726d7354b9ef8628d209641f05cd290f2fe9efb31fec4e85980c0993b235585,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+attachments/cbd9eddc-d0ea-46d1-952d-725a4543e57c/f.mp4,5232334,0b8b10c3253ebd8c03ec85ac0eccc91dc5ea568d5e8e67a8a7edcfbedd835bba,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+attachments/e18214f3-2888-4858-a7f2-e7fa06f2bb1b/agv_mecanum_chuan.zip,8336,6f7ae25de373bc36a0b934a80066feaa4fb6e565963501756509879259868da5,ORIGINAL_REVIEW,Upload gốc cần giữ hash; rà dữ liệu riêng tư trước khi xuất bản
+attachments/eafd2530-0117-4e50-8a01-c343025ffd75/Văn bản đã dán.txt,9394,ccc03c2d2074fef37f1bd0eb9b1bc3207cf660d3aca3f00a8e7dbbfef01e466f,ORIGINAL_REVIEW,Upload gốc cần giữ hash; rà dữ liệu riêng tư trước khi xuất bản
+attachments/edfd12f8-7fb0-482e-806d-cd24293c43ce/moi.mp4,6510114,720a201cb594c9524b373b973406e3431a8fce0e657dfc009f948a95738917a8,MEDIA_REVIEW,Video/ảnh thử nghiệm; lựa chọn Git LFS/Release/backup ngoài sau khi duyệt
+attachments/fedc0c8a-15e0-4f69-96b6-2f0a674579cd/agv_mecanum_CUAXOAYNGANG.zip,8558,37e9e6804731185a690a3a057ef00c3f60a0ee64459ecac12817c0be6ef37806,ORIGINAL_REVIEW,Upload gốc cần giữ hash; rà dữ liệu riêng tư trước khi xuất bản

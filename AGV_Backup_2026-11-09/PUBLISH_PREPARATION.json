@@ -1,0 +1,23 @@
+{
+  "date_local": "2026-11-09",
+  "timezone": "Asia/Saigon",
+  "target_repository": "anhtus4224/AGV-Mecanum-Arduino",
+  "branch": "backup-agv-2026-11-09",
+  "base_commit": "9745e3798e1aac03fdd48283b6dcdc72ea7deef8",
+  "archive_members": 315,
+  "copied_original_members": 271,
+  "omitted_original_members": 44,
+  "omission_reasons": {
+    "Compiled Linux test binary; source/stub retained, no firmware flashed": 12,
+    "Generated Python bytecode/cache; source .py is retained": 10,
+    "Internal Codex runtime/configuration identifiers; retain only in original local backup": 1,
+    "Git internals of old repository: do not publish config/hooks/locks as project data": 21
+  },
+  "zip_media_files_retained": 186,
+  "git_write_preflight": "git push --dry-run succeeded through existing Git channel; no original remote changed",
+  "github_rest_api_preflight": "gh api repository endpoint returned Forbidden; PR creation still requires a working API channel",
+  "source_bytes_modified": false,
+  "old_repo_remote_modified": false,
+  "environment_configuration_modified": false,
+  "note": "This is preparation evidence; actual pushed commit and PR outcome must be verified after upload."
+}

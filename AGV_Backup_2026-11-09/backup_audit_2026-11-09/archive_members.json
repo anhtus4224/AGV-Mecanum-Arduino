@@ -1,0 +1,396 @@
+[
+  {
+    "path": "agv_190_diagnostic.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "DOC_TRUOC.txt",
+        "bytes": 1789,
+        "crc32": "b73c4b6a",
+        "sha256": "0f5e8adab02a64d7760e8813da94463dfc8ebb72a72a0f79f7b5c9ca0cf8d3e9"
+      },
+      {
+        "member": "agv_190_diag/agv_190_diag.ino",
+        "bytes": 32180,
+        "crc32": "f5791b4e",
+        "sha256": "1a10771db31b0fd7a422d3abfc5cff00dca4154e241fad61391550bb5d214159"
+      }
+    ]
+  },
+  {
+    "path": "agv_190_low_adc.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "HUONG_DAN.txt",
+        "bytes": 878,
+        "crc32": "65148c00",
+        "sha256": "9744a657aa94d350546170a7ead6dcf593e182ce59d0db78a71327ab0e868fe8"
+      },
+      {
+        "member": "agv_190_low_adc/agv_190_low_adc.ino",
+        "bytes": 31382,
+        "crc32": "edac36bd",
+        "sha256": "a355a24d602fba0ff98d8284498833f8ba31b1d9f6fded17bed9f5fec4ae6c4b"
+      }
+    ]
+  },
+  {
+    "path": "agv_chuandet90_v1.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_chuandet90/agv_chuandet90.ino",
+        "bytes": 32577,
+        "crc32": "3d1e0351",
+        "sha256": "64f4ab703d976d87c1ca423037eb9cf6bc74270a3b6ca35ecdd620937a5f1fbd"
+      }
+    ]
+  },
+  {
+    "path": "agv_chuandet90_v2.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "HUONG_DAN_V2.txt",
+        "bytes": 2271,
+        "crc32": "1190c571",
+        "sha256": "a40a92e5a4df48f1890a7cd1133bcc1a900da1ab462f4db319c1068581c8dce3"
+      },
+      {
+        "member": "agv_chuandet90_v2/agv_chuandet90_v2.ino",
+        "bytes": 34300,
+        "crc32": "bf4f0d3f",
+        "sha256": "7be5615cbe9c3218fbfd135876bdc3e2189f0ffa29d059bcea4a703fa1ddce16"
+      }
+    ]
+  },
+  {
+    "path": "agv_corner90_v1.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "DOC_TRUOC_KHI_NAP.txt",
+        "bytes": 3631,
+        "crc32": "3780d85f",
+        "sha256": "d1f777e55e94b99ca340bb79616877d1971412e6ab79d395a6d6a8cc628cbe8d"
+      },
+      {
+        "member": "agv_corner90/agv_corner90.ino",
+        "bytes": 32817,
+        "crc32": "a13498eb",
+        "sha256": "a1ec50313893d7f65c6bfd2a1b782acaa5ccd999e3ace422bc64e66b64b544eb"
+      }
+    ]
+  },
+  {
+    "path": "agv_mecanum_190_v2.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "HUONG_DAN_V2.txt",
+        "bytes": 3785,
+        "crc32": "655d93d7",
+        "sha256": "3bbf47c9f3ce08f0cb727a5a0895c40d768cf490d0f4b59ee25828d23f156804"
+      },
+      {
+        "member": "agv_mecanum_190_v2/agv_mecanum_190_v2.ino",
+        "bytes": 30621,
+        "crc32": "e11e2a0b",
+        "sha256": "fa3cb7945b71dfbf9b0dd02deb89c2e964c5d7737ced10238f613c34700dc96a"
+      }
+    ]
+  },
+  {
+    "path": "agv_mecanum_190_v2_low.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "HUONG_DAN.txt",
+        "bytes": 1285,
+        "crc32": "c772271f",
+        "sha256": "6fdffd146479b5cffc9afcbca37313242ea6f456bcd262e8cca07c36ae8ee918"
+      },
+      {
+        "member": "agv_mecanum_190_v2_low/agv_mecanum_190_v2_low.ino",
+        "bytes": 30666,
+        "crc32": "bd3ddf58",
+        "sha256": "5116af672677856e1665a5276ed5af130c672b6695c57d842a7f5fdfe2500822"
+      }
+    ]
+  },
+  {
+    "path": "agv_mecanum_chuan_190_fix.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "HUONG_DAN.txt",
+        "bytes": 3226,
+        "crc32": "fe208174",
+        "sha256": "f9913bbdf743998f78f36b8a395737acc5ca1885d79ad09da52441f8d0e5cdcd"
+      },
+      {
+        "member": "agv_mecanum_chuan/agv_mecanum_chuan.ino",
+        "bytes": 30241,
+        "crc32": "d3c2c28b",
+        "sha256": "5300c60e5e32792ce7e7ab85da78f8e70d8c0f67157f5dee22ed7b1051e5f462"
+      }
+    ]
+  },
+  {
+    "path": "agv_mecanum_smooth.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_mecanum_smooth/agv_mecanum_smooth.ino",
+        "bytes": 28949,
+        "crc32": "0c986bad",
+        "sha256": "3d1e361f069309a1a19e746a07dc5f00dd0ca50ea6a20d252160f11d41be8b6a"
+      }
+    ]
+  },
+  {
+    "path": "agv_motor_lock.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_motor_lock/agv_motor_lock.ino",
+        "bytes": 819,
+        "crc32": "235eaab6",
+        "sha256": "c9aefe1983774b942daf9424d887fa3ae964429f32e9fb5e66cbe839d7a6a513"
+      }
+    ]
+  },
+  {
+    "path": "agv_safe1_repair.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_safe1/HUONG_DAN.md",
+        "bytes": 5583,
+        "crc32": "4d676a06",
+        "sha256": "a509e56fe6347524beb52174981a3be6145c6462e9f89455ac9ca2007f558e32"
+      },
+      {
+        "member": "agv_safe1/agv_mega_safe/agv_mega_safe.ino",
+        "bytes": 34879,
+        "crc32": "d2ab494d",
+        "sha256": "9796f78671c39b6fd813872c20359800dcd690c55e9871163dc9e4a4415b2364"
+      },
+      {
+        "member": "agv_safe1/agv_serial_link.py",
+        "bytes": 6262,
+        "crc32": "97f275ed",
+        "sha256": "591cccec75b4999e88c15ce4fcbe8346e47aed18bac1e628ccc217aa592ae243"
+      },
+      {
+        "member": "agv_safe1/install_server.py",
+        "bytes": 881,
+        "crc32": "fd8a2d83",
+        "sha256": "b2d078c3b675be27f2a2debc5606e5594be2123346a16a55b16994f15d0b97a6"
+      },
+      {
+        "member": "agv_safe1/stream_server.py",
+        "bytes": 46221,
+        "crc32": "3b168672",
+        "sha256": "dcd0352b9c3392848095a0d70c1112f2fce36df0e39d31e01409382aac918639"
+      },
+      {
+        "member": "agv_safe1/verify_link.py",
+        "bytes": 1282,
+        "crc32": "935c6532",
+        "sha256": "402e69e3d6579e59958b3e1ab9dae01356d194c59fd51f737dbf6b3f6c31f196"
+      }
+    ]
+  },
+  {
+    "path": "agv_web_safe1_final.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_web_safe1_final/HUONG_DAN.txt",
+        "bytes": 449,
+        "crc32": "686a754c",
+        "sha256": "dc8907c61528bed483c6e11ede5cba077c1a586cf213d0bf01613d64b7af292b"
+      },
+      {
+        "member": "agv_web_safe1_final/verify_link.py",
+        "bytes": 1282,
+        "crc32": "935c6532",
+        "sha256": "402e69e3d6579e59958b3e1ab9dae01356d194c59fd51f737dbf6b3f6c31f196"
+      },
+      {
+        "member": "agv_web_safe1_final/install_server.py",
+        "bytes": 881,
+        "crc32": "fd8a2d83",
+        "sha256": "b2d078c3b675be27f2a2debc5606e5594be2123346a16a55b16994f15d0b97a6"
+      },
+      {
+        "member": "agv_web_safe1_final/stream_server.py",
+        "bytes": 32632,
+        "crc32": "f12f0eb0",
+        "sha256": "93f438af8ca64680dde6e68a1fc07a9411b80c792c024753a8b77f04dfcd3ea3"
+      },
+      {
+        "member": "agv_web_safe1_final/agv_serial_link.py",
+        "bytes": 6262,
+        "crc32": "97f275ed",
+        "sha256": "591cccec75b4999e88c15ce4fcbe8346e47aed18bac1e628ccc217aa592ae243"
+      },
+      {
+        "member": "agv_web_safe1_final/agv_mega_safe/agv_mega_safe.ino",
+        "bytes": 35226,
+        "crc32": "afc5e2e2",
+        "sha256": "a4d7bcac9b0365233155c7d4a9ce614eb5f2aa845525d282a6960bbd0a8f045a"
+      }
+    ]
+  },
+  {
+    "path": "attachments/0e46e922-4d28-46f1-bb8e-e23a831fec74/agv_mecanum_CUAXOAYNGANG.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_mecanum_CUAXOAYNGANG/agv_mecanum_CUAXOAYNGANG.ino",
+        "bytes": 33313,
+        "crc32": "a8358d45",
+        "sha256": "38bdacb061529c72d6bff7b62f23e8799bea17d0b20a547583e0b4eaa2a44e2c"
+      }
+    ]
+  },
+  {
+    "path": "attachments/37792c73-fe46-4489-a46e-06b7ec446657/dò line.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "dò line.mp4",
+        "bytes": 13789259,
+        "crc32": "d0c31ff1"
+      }
+    ]
+  },
+  {
+    "path": "attachments/4e5ee266-d085-4b56-bdd9-3bb08cf6dd33/Robot Travels a Magnetic Line by SuperDroid Robots - YouTube - Cốc Cốc 2026-11-02 21-54-55.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "Robot Travels a Magnetic Line by SuperDroid Robots - YouTube - Cốc Cốc 2026-11-02 21-54-55.mp4",
+        "bytes": 22136787,
+        "crc32": "1d06037f"
+      }
+    ]
+  },
+  {
+    "path": "attachments/6fc5d25f-63c8-45fe-9cd9-c2ca1b9b003e/import os.docx",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "[Content_Types].xml",
+        "bytes": 1364,
+        "crc32": "2c2fab17"
+      },
+      {
+        "member": "_rels/.rels",
+        "bytes": 734,
+        "crc32": "b845204b"
+      },
+      {
+        "member": "word/_rels/document.xml.rels",
+        "bytes": 817,
+        "crc32": "51b364d6"
+      },
+      {
+        "member": "word/document.xml",
+        "bytes": 2395887,
+        "crc32": "9ce9a6d6"
+      },
+      {
+        "member": "word/theme/theme1.xml",
+        "bytes": 6799,
+        "crc32": "aa40b707"
+      },
+      {
+        "member": "docProps/thumbnail.emf",
+        "bytes": 98460,
+        "crc32": "6a805829"
+      },
+      {
+        "member": "word/settings.xml",
+        "bytes": 2553,
+        "crc32": "219b88b9"
+      },
+      {
+        "member": "word/fontTable.xml",
+        "bytes": 1605,
+        "crc32": "0f6244ab"
+      },
+      {
+        "member": "word/webSettings.xml",
+        "bytes": 431409,
+        "crc32": "9999a4cd"
+      },
+      {
+        "member": "docProps/core.xml",
+        "bytes": 765,
+        "crc32": "66c3fac1"
+      },
+      {
+        "member": "word/styles.xml",
+        "bytes": 29456,
+        "crc32": "6abff3c1"
+      },
+      {
+        "member": "docProps/app.xml",
+        "bytes": 719,
+        "crc32": "3717dac2"
+      }
+    ]
+  },
+  {
+    "path": "attachments/b5273a60-93a9-4910-a234-3976eaa8eef9/agv_mecanum_chuandet.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_mecanum_chuandet/agv_mecanum_chuandet.ino",
+        "bytes": 31340,
+        "crc32": "4698479b",
+        "sha256": "7ed792ace01123ee1097011f57d1079d69ef42a613b328d04578c2d9ae385b04"
+      }
+    ]
+  },
+  {
+    "path": "attachments/b6d38020-c321-402a-93d9-965daf2efc39/agv_mecanum_chuandet.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_mecanum_chuandet/agv_mecanum_chuandet.ino",
+        "bytes": 31340,
+        "crc32": "4698479b",
+        "sha256": "7ed792ace01123ee1097011f57d1079d69ef42a613b328d04578c2d9ae385b04"
+      }
+    ]
+  },
+  {
+    "path": "attachments/e18214f3-2888-4858-a7f2-e7fa06f2bb1b/agv_mecanum_chuan.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_mecanum_chuan/agv_mecanum_chuan.ino",
+        "bytes": 27954,
+        "crc32": "ca40150f",
+        "sha256": "e13aabc8276fa7e75f262d4b95dc701a5ccc3168db4c2857767f2e11ef872378"
+      }
+    ]
+  },
+  {
+    "path": "attachments/fedc0c8a-15e0-4f69-96b6-2f0a674579cd/agv_mecanum_CUAXOAYNGANG.zip",
+    "integrity": "PASS",
+    "members": [
+      {
+        "member": "agv_mecanum_CUAXOAYNGANG/agv_mecanum_CUAXOAYNGANG.ino",
+        "bytes": 33313,
+        "crc32": "a8358d45",
+        "sha256": "38bdacb061529c72d6bff7b62f23e8799bea17d0b20a547583e0b4eaa2a44e2c"
+      }
+    ]
+  }
+]

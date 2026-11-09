@@ -1,0 +1,26 @@
+AGV_190_V2_LOW
+Ban V2 chi sua LINE_DETECTED tu HIGH sang LOW va doi nhan firmware.
+Can cu do OUT3/A2: trang ADC 952, den ADC 18. OUT3 hoat dong active LOW.
+
+Tat nguon truoc khi doi day. Thao jumper A2-GND cua phep thu.
+Noi lai VCC theo thong so module, GND chung va OUT1..OUT5 ve A0..A4
+nhu cach dau ban dau (OUT3->A2). Khong noi bat ky OUT nao xuong GND.
+Mo agv_mecanum_190_v2_low/agv_mecanum_190_v2_low.ino.
+Chon Mega2560, dung cong, Verify va Upload. Monitor115200.
+Phai thay fw=AGV_190_V2_LOW trong HB.
+
+Kiem tra khi motor ngung, MANUAL:
+- Toan thanh tren trang: DATA:00000.
+- Chi mat giua tren den: DATA:00100.
+- Kiem tra tung mat de xac nhan ca 5 dau ra cung cuc tinh, khong bi tha noi.
+RAW trong sketch test la muc dien, con DATA trong sketch nay la 'nhan line':
+RAW HIGH tren trang -> DATA0; RAW LOW tren den -> DATA1.
+Neu truoc do chi OUT3 duoc noi, RAW cua 4 chan khac tha noi khong co y nghia.
+
+Sau khi 5 mat phan biet dung: bat AUTO bang M/nut31.
+Giua line: zone=S cruise=190 target=190/190, L/R dat190/190 sau slew.
+Khong tang toc neu van khong phan biet duoc vach/cua.
+
+Da pass g++ syntax voi Arduino stub va 13 nhom test mo phong active LOW,
+32 mau cam bien va10000 chu ky tron. Chua build bang AVR toolchain,
+chua nap/chay xe. Khong bao dam van toc hay bam cua vat ly.

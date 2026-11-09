@@ -1,0 +1,69 @@
+AGV_190_V2 - SUA TRANG THAI GIU TOC DO 120
+
+NAP:
+Giai nen. Mo agv_mecanum_190_v2/agv_mecanum_190_v2.ino.
+Arduino IDE: Arduino Mega or Mega 2560, ATmega2560, dung cong USB.
+Verify truoc, sau do Upload. Khong can thu vien Servo.
+Ban nay co ten rieng de khong nap nham ban truoc.
+Mo Serial Monitor 115200, bam reset: phai thay AGV_190_V2 READY.
+
+THAY DOI SO VOI BAN 190 TRUOC:
+- BO SIDE_CURVE_MS: mat 2/4 bat line lau KHONG tu chuyen sang cua.
+- BO dieu kien a<=1 de thoat cua. Chi mat 2/4 bat (a=2) van thoat cua duoc.
+- BO cho CENTER_HOLD_MS va tang cruise tung buoc.
+- Khi !L2 && !R2 va co line trong cum giua: cruiseSpeed dat truc tiep 190.
+  Chu y: neu vua cua/mat line, cho hai ria sach va cum giua co line 60ms
+  roi thoat trang thai cua, sau do dat truc tiep 190.
+- Mat giua: muc tieu L/R=190/190.
+  Mat giua + mat ben: 180/190 (hoac dao ben).
+  Chi mat ben: 170/190 (hoac dao ben), khong khoa banh trong ve 0.
+  Do la PWM muc tieu, khong phai toc do vat ly (m/s).
+- Van giu slew 40 PWM/chu ky de motor khong nhay tu 0 len 190 tuc thi.
+  Neu chu ky deu 10ms, tu 0 len muc tieu mat khoang 50ms.
+- Cham mot mat ria: vao cua ngay, dung bang cua goc, nhung banh ngoai
+  duoc gioi han toi da 190 (ban cu cho phep len 255). Banh trong co the
+  ve 0 de be lai, khong dao chieu. Xung phanh van TAT.
+- Sau khi roi ria: trong 60ms cho thoat cua, dung lai mem 120/100..120.
+  Hai ria cung bat: chay cham 120, khong coi la thang de phong nhanh.
+- Mat line: giam muc tieu hai ben toi da 120, tim lai o muc toi da 160,
+  het thoi gian thi dung; khong giu lenh 190 trong 150ms mat line.
+- Khong co giam toc theo thoi gian doan thang (1 giay/10 giay).
+- Giu nguyen chan, REVERSE_SENSOR_ORDER, LINE_DETECTED, servo mem,
+  giao thuc WiFi, thong so ne can va ban sua lenh S HOA dung AUTO.
+
+DOC LOG DE PHAN BIET LENH 190 VA CHUYEN DONG THUC:
+HB co fw=AGV_190_V2, cruise, zone, a, bits, target va L/R.
+Chi xem gia tri bam line khi mode=AUTO.
+bits thu tu logic TRAI -> PHAI: L2,L1,M,R1,R2 (da dao thu tu chan).
+DATA giu thu tu chan A0..A4 nhu ban goc, nen KHONG dong nhat thu tu bits.
+Vi du sau khi on dinh:
+- bits=00100 zone=S cruise=190 target=190/190 L/R=190/190: giua line.
+- bits=01000 zone=S cruise=190 target=170/190 L/R=170/190: chi mat trai giua.
+- bits=00010 zone=S cruise=190 target=190/170 L/R=190/170: chi mat phai giua.
+- zone=C: mat ria dang bat hoac dang cho thoat cua 60ms.
+- zone=X: hai mat ria cung bat, chay cham.
+- zone=L: mat line / da dung vi mat line.
+HB moi 1 giay la anh chup thoi diem, khong ghi lai moi chuyen trang thai.
+
+NEU XE VAN CHAM:
+1. Xac nhan fw=AGV_190_V2 de loai tru nap nham file/cu.
+2. Neu zone=C/X: xem bits, kiem tra mat ria co dang nhan nham line hay khong.
+   Khong ep chay 190 bat chap mat ria: se bo mat dau hieu vao cua.
+3. Neu zone=S cruise=190 target=190/190 L/R=190/190 ma van cham:
+   phan mem dang yeu cau PWM 190; can kiem tra pin, driver, dong co, tai,
+   khong the ket luan do bien cruiseSpeed nua.
+Gui 10-20 dong HB + DATA kem video neu can dieu chinh tiep.
+
+KIEM TRA:
+- g++ -std=gnu++17 -Wall -Wextra -fsyntax-only voi Arduino stub: PASS.
+- 13 nhom mo phong: ca 7 mau cum giua duoc giu 5 giay, sau cua van
+  thoat duoc khi chi mat 2/4 bat, mat/bat lai line, dung, reset, 32 mau
+  cam bien va 10000 chu ky tron: PASS.
+- Kiem tra AddressSanitizer/UndefinedBehaviorSanitizer: PASS.
+  LeakSanitizer khong ho tro sandbox nen tat rieng kiem tra ro ri bo nho.
+- CHUA bien dich Arduino AVR toolchain, CHUA nap/chay tren xe.
+  Verify trong Arduino IDE truoc khi nap. Thu ke banh va lenh S truoc,
+  sau do thu tren san trong, nguoi dieu khien san sang dung xe.
+- 5 mat digital khong do duoc ban kinh cua / van toc / do truot:
+  khong the bao dam khong vang khi vao cua chi bang sua code.
+  Ban V2 uu tien dung yeu cau: cum giua 190, mat ria moi vao cua.

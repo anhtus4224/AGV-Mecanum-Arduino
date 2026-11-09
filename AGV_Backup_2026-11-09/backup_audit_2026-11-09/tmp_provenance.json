@@ -1,0 +1,26 @@
+[
+  {
+    "original_path": "/tmp/test_safe1_final.cpp",
+    "backup_path": "backup_audit_2026-11-09/recovered_tmp/test_safe1_final.cpp",
+    "sha256": "e566bcea64fcb91dc55de96fd3daa94b2c7495a486a7486872592b582d11a635",
+    "bytes": 1922
+  },
+  {
+    "original_path": "/tmp/test_safe1_final.py",
+    "backup_path": "backup_audit_2026-11-09/recovered_tmp/test_safe1_final.py",
+    "sha256": "7a99ef52d1da3a331f905f3c6aa8a37c8ac65f80c50b6690d0cba19d7081b475",
+    "bytes": 4501
+  },
+  {
+    "original_path": "/tmp/safe1_final_js.js",
+    "backup_path": "backup_audit_2026-11-09/recovered_tmp/safe1_final_js.js",
+    "sha256": "e172184c9249075242d16fcb67ffc68672dab14e2584f6b92ac8704c4b6f860a",
+    "bytes": 14975
+  },
+  {
+    "original_path": "/tmp/test_safe1_final",
+    "backup_path": "backup_audit_2026-11-09/recovered_tmp/test_safe1_final",
+    "sha256": "b627c46fdf0e7cc3af95bef0cbc1e2eff470a85bca511b03b8eb8d068456d666",
+    "bytes": 73952
+  }
+]

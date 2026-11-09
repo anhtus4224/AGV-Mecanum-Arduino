@@ -1,0 +1,54 @@
+BAN SUA AGV MECANUM - MAC DINH 190 PWM
+
+1. Giai nen ZIP, mo agv_mecanum_chuan/agv_mecanum_chuan.ino trong Arduino IDE.
+   Chon board Arduino Mega or Mega 2560, processor ATmega2560 (neu co muc nay),
+   chon dung cong USB. Bam Verify, sau do Upload. Khong can thu vien Servo.
+   Giu lai ban goc de quay lai neu can.
+
+2. Thay doi:
+   - Toc do thang toi da 190, tang 2 PWM moi chu ky dieu khien (danh nghia 10ms).
+   - Cho on dinh 120ms luc bat dau / sau cua, sau do len 190 trong khoang 350ms.
+     Chu ky thuc te co the dai hon do sieu am / serial.
+   - Ba mat giua: lech nhe khong reset cruise; giam banh trong toi da 20 PWM.
+   - Cham mat ria: vao cua ngay. Chi mat 2/4 bat cung phia lien tuc 100ms:
+     cung vao cua, tranh giu toc do cao khi lech keo dai.
+   - Thoat cua khi a<=1, khong mat ria, lien tuc 100ms; khong tang lai dot ngot.
+   - Giu bang cua goc INNER={120,0,0,0,0}, OUTER={120,190,235,255,255}.
+     LINE_BASE_SPEED=120 khong co nghia banh ngoai cua bi gioi han o 120:
+     banh ngoai van co the len 255, banh trong ve 0. Chuyen tiep qua slew 40 PWM.
+   - Tat xung phanh mac dinh. Khong dao chieu banh trong nhanh do line.
+   - Mat line: lap tuc ha muc tieu hai ben xuong toi da 120, qua slew;
+     tim lai bang ngoai 160, trong 0 neu huong cu ro. Het gio thi dung.
+     Bat lai line phai qua giai doan on dinh truoc khi tang toc.
+   - Khong co bo dem cu chay 1 giay la giam toc.
+   - Hai mat ria cung bat: chay cham 120 thay vi coi trung binh err=0 la thang.
+   - Giu nguyen chan, chieu cam bien, servo mem, toc do WiFi, thong so ne can.
+     Chi bo sung reset trang thai bam line sau ne can / doi che do.
+   - Sua them loi S HOA bi bo qua trong AUTO o ban goc: app gui S nay dung xe
+     va thoat ve MANUAL. Giu nguyen y nghia s thuong cua giao thuc goc.
+
+3. Thu xe:
+   - Thu ke banh truoc de xac nhan chieu va lenh S dung duoc tu AUTO.
+   - Thu san trong, nguoi dieu khien san sang dung. Chay thang, cua trai,
+     cua phai, mat line va ne can. Khong coi test mo phong la test vat ly.
+   - Mo Serial Monitor 115200 baud. HB co:
+       cruise=190 zone=S a=0.00 L/R=190/190
+     S=thang, C=cua, L=mat line, X=hai ria cung bat.
+     a va L/R la gia tri tai luc HB (1 giay/lan); DATA van theo thu tu A0..A4.
+     HB khong ghi duoc moi lan chuyen trang thai ngan.
+   - Neu cua van vang, chua tang len 200. Gui log HB + DATA va video cua
+     de dieu chinh SIDE_CURVE_MS / trim / muc toc do vao cua theo xe thuc.
+   - Chi sau khi 190 on dinh moi doi:
+       const int LINE_FAST_SPEED = 200;
+     Khong doi WIFI_MAX_SPEED de tang toc do line.
+
+4. Kiem tra da lam:
+   - g++ -std=gnu++17 -Wall -Wextra -fsyntax-only voi stub Arduino.h: PASS.
+   - Mo phong truc tiep sketch: 12 nhom tinh huong, toan bo 32 mau cam bien,
+     10000 chu ky dau vao hon hop; assert huong PWM, tang toc, vao/thoat cua,
+     mat/bat lai line, timeout, reset che do va lenh S AUTO: PASS.
+   - AddressSanitizer + UndefinedBehaviorSanitizer: PASS (LeakSanitizer khong
+     duoc ho tro trong sandbox, khong bat kiem tra ro ri bo nho).
+   - Day la bien dich/kiem tra tren may chu voi stub, CHUA bien dich bang
+     Arduino AVR toolchain, CHUA nap va CHUA chay thu tren xe.
+   - Khong bao dam khong vang o PWM 190/200 truoc khi do/thu xe thuc.

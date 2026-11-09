@@ -1,0 +1,9 @@
+{
+  "checked_at_utc": "2026-11-09T04:00:57.085524+00:00",
+  "source_files_checked": 274,
+  "source_changed_or_missing": [],
+  "git_metadata_files_checked": 21,
+  "git_metadata_changed_or_missing": [],
+  "git_metadata_new_files": [],
+  "note": "Chỉ so sánh hash; không chạy firmware hoặc test."
+}

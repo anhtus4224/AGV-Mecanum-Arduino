@@ -1,0 +1,75 @@
+# TÓM TẮT DỰ ÁN XE AGV MECANUM — CƠ SỞ LÀ FILE `agv_mecanum_v15.ino` (bản đang chạy trên xe)
+
+> Cách dùng: dán file này vào đầu cuộc trò chuyện với AI, đính kèm `agv_mecanum_v15.ino`, rồi ra lệnh. Yêu cầu AI: **v15 là bản chuẩn đang chạy ổn (ít lỗi); chỉ sửa tối thiểu, không viết lại cả file, không đổi phần cứng/chân; trả về đoạn thay thế rõ ràng (vị trí dòng cần xóa/dán) hoặc cả file khi tôi yêu cầu; tự kiểm tra biên dịch và nói rõ "chưa chạy thử trên xe".**
+
+## 1. Phần cứng (ĐÃ CỐ ĐỊNH — KHÔNG ĐỔI CHÂN/ĐẤU NỐI)
+- **Arduino Mega 2560**, 4 bánh Mecanum, 4 driver **BTS7960**:
+  - FL: RPWM=44 (lùi), LPWM=3 (tiến) | FR: RPWM=5 (tiến), LPWM=9 (lùi)
+  - RL: RPWM=7 (lùi), LPWM=8 (tiến) | RR: RPWM=11 (tiến), LPWM=12 (lùi)
+  - Quy ước: bánh TRÁI tiến = LPWM, bánh PHẢI tiến = RPWM. `drive(fl,fr,rl,rr)`: >0 tiến, <0 lùi (`motor(D1,-fl), motor(D2,fr), motor(D3,-rl), motor(D4,rr)`).
+  - BTS7960: chỉ một phía PWM chạy; cả hai = 0 là PHANH (code không thể "thả trôi").
+- Thanh dò line **5 mắt TCRT5000** A0–A4 (digital), gắn phía trước xe (xa trục bánh).
+  - Bắt vạch đen => LED TẮT => DO = HIGH => `LINE_DETECTED = HIGH`.
+  - `REVERSE_SENSOR_ORDER = true` (A0 nằm bên PHẢI xe; nếu sai xe sẽ NÉ vạch).
+- 4 siêu âm: Front 22/23, Back 24/25, Left 26/27, Right 28/29. Servo **MG90S chân 10** mang siêu âm trước (xoay 45/90/135).
+- **ESP8266 NodeMCU** ↔ Serial2 9600 (WiFi/UDP cho app; app gửi 1 byte HEX: 51=Q, 46=F, 45=E, 4C=L, 53=S, 52=R, 42=B, 4D=M).
+- **Jetson Nano** ↔ USB Serial 115200 (CHƯA kết nối khi test; chỉ tích hợp sau khi xe cua mượt).
+- Nút bấm vật lý đổi chế độ: chân 31 (INPUT_PULLUP). Đo điện áp: A5.
+
+## 2. Hai chế độ
+1. **Lái tay qua WiFi** (F/B/L/R/Q/E/S, `WIFI_MAX_SPEED=240`, failsafe 700 ms).
+2. **Tự hành dò line + né vật cản** (đổi bằng phím M hoặc nút chân 31).
+
+## 3. Cấu trúc v15 (đúng như file)
+- **Bỏ thư viện Servo** (Servo chiếm Timer5 làm hỏng PWM chân 44/45/46 trên Mega) → `servoMove()` tự tạo xung.
+- Serial: từ ESP chỉ nhận whitelist `"FBLRQESMZ"`; byte lạ bị bỏ qua; M có khóa chống lặp 800 ms; phím lái tay trong tự hành sẽ giành quyền; USB nhận thêm phím web. Telemetry mỗi 150 ms: `DATA:xxxxx,ACT,volt` và `SONAR:f,b,l,r`. Debug: `>> HB up=.. mode=.. rxUSB=.. rxESP=.. rejESP=.. last=..` và `>> RX[src]: 'c' 0xHH`.
+- Siêu âm đọc xoay vòng không chặn (F,L,F,R,F,B mỗi 40 ms, timeout 8 ms). Vật cản trước ≤ 18 cm xác nhận 2 lần (`frontHits>=2`) → chạy né.
+
+### Dò line (`handleLineAndObstacleMode`, chu kỳ 10 ms)
+- Sai số: `err = (−4·l2 −2·l1 +2·r1 +4·r2) / số_mắt_sáng`, `a = |err|` (0..4):
+  a=0 mắt giữa | a=1 giữa+mắt2 (hoặc giữa+mắt4) | a=2 chỉ mắt 2/4 | a=3 mắt rìa+mắt2/4 | a=4 chỉ mắt rìa.
+- Bảng lái kiểu video Osoyoo (bánh TRONG GIỮ = 0 → phanh, bánh NGOÀI quay mạnh; code chặn cứng `inner >= 0`, không bao giờ quay ngược), nội suy bằng `lerpTbl`:
+  - **v15:** `INNER_TBL = {120, 50, 0, 0, 0}`, `OUTER_TBL = {120, 165, 225, 255, 255}`
+  - (bản v13 từng chạy cua rất tốt: `INNER {120,0,0,0,0}`, `OUTER {120,190,235,255,255}` — AI nên hỏi tôi bảng nào đang dùng thực tế trước khi sửa; hàng 0 bị thay bằng `cruiseSpeed`.)
+- Bộ làm mượt `slewTo` (`SLEW_STEP=40` mỗi 10 ms). Cua gắt (`a >= PULSE_MIN_A=2.0`): xung đẩy 40 ms / phanh 25 ms.
+- **Tăng tốc đoạn thẳng (v15):** nếu `a < 0.01` (chỉ khi vạch đúng dưới mắt giữa/đối xứng) và đã qua `CENTER_HOLD_MS` kể từ lần lệch cuối thì `cruiseSpeed += RAMP_UP_STEP` tới `LINE_FAST_SPEED`; **MỌI độ lệch khác (a>=0.01, kể cả mắt giữa+mắt2) lập tức đặt `cruiseSpeed = LINE_BASE_SPEED (120)` và reset `lastDeviationTime`.**
+- **Mất vạch 3 tầng:** giữ lệnh cũ 150 ms → tiếp tục cua bằng hàng mạnh nhất của bảng (tối đa 1.2 s) → `stopLineLost()` dừng hẳn + in cảnh báo.
+- Cua 90° tại chỗ (`ENABLE_90_TURN`) đang TẮT; góc vuông coi như cua gắt.
+
+### Né vật cản (`executeCorridorAvoidance`, v15)
+1. Dừng, đo trái/phải + servo quét 135°/45° chọn hướng dạt (`primaryDir`/`returnDir`).
+2. [1/3] dạt ngang ra `AVOID_OUT_MS`; [2/3] tiến thẳng song song `AVOID_FORWARD_MS` (tốc độ `LINE_BASE_SPEED`).
+3. [3/3] dạt ngược lại: 3a bỏ qua cảm biến trong `AVOID_BACK_BLIND_MS`, 3b tiếp tục dạt tối đa `AVOID_BACK_SEARCH_MS`, **dừng khi mắt GIỮA (A2) thấy line 2 lần liên tiếp**; rồi reset trạng thái dò line.
+- Hằng số trong file v15: `AVOID_STRAFE_SPD=160`, `OUT=3600`, `FORWARD=4900`, `BACK_BLIND=3600`, `BACK_SEARCH=5000`. Giá trị người dùng nạp thực tế (tự chỉnh tay) từng là ~`3300 / 5300 / 3000 / 5000`.
+
+## 4. Thông số v15 (mục 5 của file)
+```
+LINE_BASE_SPEED = 120   LINE_FAST_SPEED = 170 (người dùng từng khuyên 135–160)
+RAMP_UP_STEP = 1        CENTER_HOLD_MS = 250
+SLEW_STEP = 40          ENABLE_TURN_PULSE = true, PULSE_MIN_A = 2.0, ON/OFF = 40/25 ms
+HOLD_LAST_MS = 150, CREEP_MS = 300, SEARCH_MAX_MS = 1200
+WIFI_MAX_SPEED = 240    DEBUG_HEARTBEAT = true, DEBUG_RX = true
+```
+
+## 5. Mục tiêu của tôi
+- Dò line mượt như video Osoyoo: vào cua thì bánh trong giữ, bánh ngoài quay đủ lực; không quay ngược bánh trong.
+- Phản ứng từ độ lệch nhỏ ở mắt 2/4; cua gần 90° vẫn bám line, không văng ra ngoài.
+- **Đoạn thẳng chạy NHANH và MƯỢT** (lệch nhẹ trong cụm 3 mắt giữa thì cứ chạy thẳng, không phanh/giật), nhưng vào cua vẫn nhận ra và không mất line. **Không muốn "giảm tốc sớm"** (đoạn thẳng dài 10 s vẫn giữ tốc độ cao).
+- Né vật cản: dạt ngang ra → tiến song song → dạt về, dừng đúng giữa line, không lố qua cả 5 mắt.
+- Jetson chỉ tích hợp sau khi cua mượt. Ít sửa nhất có thể, vì v15 đang chạy khá tốt.
+
+## 6. Vấn đề đang mở (đối chiếu với v15)
+1. **Đoạn thẳng chạy chậm (~120):** theo code v15, mỗi lần vạch chạm mắt 2/4 dù thoáng qua (a>=0.01) là `cruiseSpeed` bị reset về 120 và phải chờ `CENTER_HOLD_MS` mới tăng lại; xe lắc nhẹ ở đoạn thẳng nên hầu như không lên được `LINE_FAST_SPEED`. Log trên các bản thử nghiệm sau đó cũng cho `cruise=120` (chưa chốt được nguyên nhân cuối cùng).
+   - **Hướng sửa đã dựng thử (không có trong v15, là bản tùy chọn v17→v21):** vùng chạy thẳng `DEAD_A=1.0` (a<=1 và mắt rìa không sáng thì giữ tốc độ, chỉ bẻ nhẹ bằng `STRAIGHT_TRIM=25`), chỉ reset tốc độ khi ở vùng cua liên tục > `CURVE_RESET_MS=300`, thêm `zone=S/C/L` và `a=` vào dòng HB để chẩn đoán. Người dùng báo bản v19 "cua rất tốt" nhưng tốc độ thẳng vẫn chậm; chưa có log `zone=` để kết luận.
+   - Cần làm tiếp: chạy xe thẳng, gửi vài dòng `>> HB ... cruise= zone= a=` + `DATA:xxxxx` để biết xe đang ở vùng thẳng hay vùng cua (nghi ngờ vạch lệch ở mắt 2/4 liên tục do thanh cảm biến lệch tâm hoặc vạch dày).
+2. **Né cản — xe dạt về lố qua cả 5 mắt:** nguyên nhân khả dĩ: `AVOID_BACK_BLIND_MS` (≈ thời gian dạt ra) làm xe lướt qua line khi cảm biến bị bỏ qua. Đã có bản vá (3 cơ chế: dạt nhanh rồi chậm `AVOID_FINAL_SPD=110`, chỉ "lên cò" sau khi 5 mắt thấy nền trắng liên tục 150 ms, tự đổi chiều dạt chậm nếu lố) — chưa xác nhận trên xe. Một biến thể khác người dùng từng nạp: 3a dạt cố định ngắn hơn rồi 3b dạt chậm 120 và dừng khi BẤT KỲ mắt trong cụm 3 mắt giữa thấy line.
+3. **Cua gần 90° gắt:** giới hạn vật lý — thanh cảm biến ở xa trục bánh trước và lệch tâm; nên đặt thanh gần trục bánh trước, căn giữa xe. Tốc độ vào cua quá cao (≥170–180) làm xe trượt khỏi line.
+
+## 7. Bài học (đừng lặp lại)
+- Không dùng thư viện Servo trên Mega. `LINE_DETECTED=HIGH` (không phải LOW), `REVERSE_SENSOR_ORDER=true`.
+- Không cho bánh trong quay ngược khi dò line (tôi đã từ chối); `steerChassis` chỉ nhận 0..255.
+- Không làm mềm hàng 1/2 của bảng lái trừ khi tôi yêu cầu (bản v15 mềm hơn v13 từng khiến xe mất line ở cua — hỏi tôi bảng nào đang chạy tốt).
+- Né cản: dừng bằng mắt GIỮA A2, không dùng "bất kỳ mắt nào" (gây lắc).
+- Tăng `LINE_FAST_SPEED` theo từng nấc; quá cao làm xe vào cua bị trượt.
+- Khi chèn hằng số vào code phải xuống dòng (từng nuốt dòng kế tiếp vào chú thích → lỗi biên dịch).
+- Luôn kiểm tra biên dịch (g++ -fsyntax-only + stub Arduino.h) trước khi giao nhưng nói rõ là chưa chạy thử trên xe.

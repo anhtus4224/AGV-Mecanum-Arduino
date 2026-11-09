@@ -1,0 +1,5 @@
+AGV WEB SAFE1 FINAL
+Giữ thuật toán, thông số xe gốc. Thay giao tiếp USB, dừng, watchdog; tắt nhận lệnh ESP cũ mặc định.
+USB115200. Nạp agv_mega_safe.ino; hai file Python cùng thư mục; không dùng với firmware đọc ký tự cũ.
+Tắt nguồn motor, dừng dịch vụ trước khi thay/nạp. verify_link.py rồi mới khởi động server.
+Đã kiểm thử mô phỏng; chưa kiểm chứng trên xe thật.

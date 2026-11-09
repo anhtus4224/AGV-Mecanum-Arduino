@@ -1,0 +1,41 @@
+AGV_CHUANDET_90_V2 - BAN THU, CHUA CHAY TREN XE
+
+Dua tren ban CHUANDET90V1, giu pin, LOW, order=false, WiFi255,
+phan bam line va ne can cua chuandet.
+
+SUA THEO VIDEO moi.mp4 VA SO DO NGUOI DUNG:
+1.RUNOUT_RIGHT_MS=608, RUNOUT_LEFT_MS=608.
+  V1 1216ms cho front vuot line~30cm, muc tieu15cm -> he so0.5.
+  La uoc luong moi, con anh huong troi va vi tri nhan goc, chua bao dam
+  tam dung o dung giao diem. Chinh rieng tung ben sau luot test.
+2.Nho da roi line cu trong luc tienbu, khong chi trong luc xoay.
+3.Bo dieu kien batbuoc matben phai bat truocM. SideSeen chi ghi nhan,
+  khong khoa viec chapnhan cumgiua.
+4.Sau khi roi line cu va qua MIN_TURN_MS200, chi can1lan doc M bat,
+  hai matria tat thi ngat PWM ngay. Khong doi them1mau10ms.
+  Van xac minh line sau80ms. Khong them pha xoay cham, van255.
+5.Giam gioihan timline tu4000xuong2200ms: hanche quay xa khi lo line.
+  Khong duoc hieu la do/chot chinhxac90do. Video khong kem log nen
+  chua khang dinh V1 dung do timeout hay do bat nham line cu.
+6.SPINTIMEOUT / LINE_MOVED_AFTER_STOP: dung CHO LINE, khong khoa cung.
+  Khi AUTO, M bat/hai ria sach lien tuc120ms va khong co vatcan truoc:
+  tu dong chay lai. Dat xe DUNG HUONG nhanh muon di; mot thanh khong
+  biet dau xe dang quay dung huong hay nguoc huong.
+7.Loi OBSTACLE/INVALID_STATE van dung khoa cho kiemtra/M, khong tu
+  chay lai chi vi cam bienM vua nhin thay vach.
+
+THU:
+- Luu V1 du phong. Mo agv_chuandet90_v2/agv_chuandet90_v2.ino.
+- Mega2560, Verify/Upload, Monitor115200, thay AGV_CHUANDET_90_V2.
+- Thu1goc, ghi CORNER DETECT_RUNOUT/SPIN_START/CENTER_STOP/LOCK_OK/FAULT.
+- Quay vi tri xe tai SPIN_START, can biet tam xe so voi nhanh ngang.
+- Neu front con vuot30cm nhu cu: kiem tra banner va runout608ms.
+- Neu front vuot17cm: tam con vuot2cm; giam runout mot it, khong tu y
+  doi thoi gian xoay. He so0.5tu do lan truoc khong co do chinhxac tuyetdoi.
+- ChoLINE tu chay lai trongAUTO: xe co the chay ngay sau khi datvao line.
+  Neu can cam/di chuyen xe ma khong muon chay, M veMANUAL truoc.
+- Van dung khi matline lau: khong cho quay/di mu vo han.
+
+KIEM TRA: syntax g++ voiArduino stub PASS; 11nhom mo phong PASS,
+bao gom runout608, traiphai, batMkhongcanmatben, roi linecu, tu resume,
+matline sauchot, vatcan, lenhS, timeoutWiFi. Chua build AVR/chayxe.

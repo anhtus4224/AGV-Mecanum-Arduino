@@ -1,0 +1,14 @@
+AGV_190_LOW_ADC: ban chan doan, giu logic PWM/line cua V2_LOW.
+Them ADC5 theo thu tu A0,A1,A2,A3,A4 moi lan telemetry 150ms;
+FIRST_LOSS ADC5 khi chuyen tu co line sang khong thay line.
+ADC va digitalRead duoc lay o cac thoi diem ke tiep, khong dong thoi.
+Bo lan doc ADC dau sau chuyen kenh de giam anh huong settling.
+Viẹc doc them ADC/serial lam tang thoi gian vong lap, chua do tren Mega.
+
+Mega2560, Verify/Upload, Monitor115200. Giu LOW, khong doi chan.
+Thu truoc MANUAL, dong co ngung: dat mat2/4 tren den, ghi DATA+ADC5.
+Sau do thu AUTO tren doan thang trong. Gui DATA+ADC5+HB va FIRST_LOSS
+luc xe dung, neu co. Ket qua giup phan biet tin hieu gan nguong digital
+va tin hieu that su quay ve muc trang do rung/do cao/day/nguon/anh sang.
+Khong xem day la ban da sua duoc loi mat tin hieu khi xe chay.
+Da kiem tra g++ Arduino stub va 13 nhom mo phong; chua buildAVR/chayxe.

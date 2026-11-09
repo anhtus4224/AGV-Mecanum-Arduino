@@ -1,0 +1,86 @@
+[
+  {
+    "cwd": "/workspace",
+    "command": "pwd",
+    "exit_code": 0,
+    "stdout": "/workspace\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "/workspace",
+    "command": "git --no-optional-locks status",
+    "exit_code": 128,
+    "stdout": "",
+    "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+  },
+  {
+    "cwd": "/workspace",
+    "command": "git remote -v",
+    "exit_code": 128,
+    "stdout": "",
+    "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+  },
+  {
+    "cwd": "/workspace",
+    "command": "git branch -a",
+    "exit_code": 128,
+    "stdout": "",
+    "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+  },
+  {
+    "cwd": "/workspace",
+    "command": "git ls-files",
+    "exit_code": 128,
+    "stdout": "",
+    "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+  },
+  {
+    "cwd": "/workspace",
+    "command": "git symbolic-ref HEAD",
+    "exit_code": 128,
+    "stdout": "",
+    "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+  },
+  {
+    "cwd": "/workspace/anh-tu",
+    "command": "pwd",
+    "exit_code": 0,
+    "stdout": "/workspace/anh-tu\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "/workspace/anh-tu",
+    "command": "git --no-optional-locks status",
+    "exit_code": 0,
+    "stdout": "On branch work\n\nNo commits yet\n\nnothing to commit (create/copy files and use \"git add\" to track)\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "/workspace/anh-tu",
+    "command": "git remote -v",
+    "exit_code": 0,
+    "stdout": "origin\thttps://github.com/anhtus4224/anh-tu.git (fetch)\norigin\thttps://github.com/anhtus4224/anh-tu.git (push)\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "/workspace/anh-tu",
+    "command": "git branch -a",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "/workspace/anh-tu",
+    "command": "git ls-files",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "/workspace/anh-tu",
+    "command": "git symbolic-ref HEAD",
+    "exit_code": 0,
+    "stdout": "refs/heads/work\n",
+    "stderr": ""
+  }
+]

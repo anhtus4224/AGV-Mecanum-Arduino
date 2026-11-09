@@ -1,0 +1,31 @@
+AGV_190_DIAG: sua log de xac dinh nguyen nhan xe cham, KHONG phai ban da
+xac nhan khac phuc toc do vat ly. Giu logic bam line V2: cum giua 190,
+ria vao cua, het ria 60ms thoat cua; mat line giam toc.
+
+Mo agv_190_diag/agv_190_diag.ino, Mega 2560, Verify/Upload.
+Monitor 115200. Dung M hoac nut31 de vao AUTO.
+
+cmd4=FL/FR/RL/RR: lenh PWM co dau gui xuong motor, KHONG phai toc do
+banh do duoc. Da doi chieu ve quy uoc duong=tien cho moi banh.
+raw=A0..A4: muc dien digital doc tai thoi diem HB (0/1), chua dao thu tu.
+bits=L2,L1,M,R1,R2: line logical su dung trong chu ky dieu khien gan nhat.
+Trong MANUAL: chi hien cmd4, raw va line=N/A, khong hien cruise cu.
+Trong AUTO: hien cmd4, cruise, zone, reason, bits, target, so chu ky
+S/E/H/X/L (thang/ria/cho thoat cua/hai ria/mat line) tu lan reset gan nhat.
+HB moi giay khong luu duoc tat ca cac chuyen trang thai ngan.
+
+KET QUA CAN GUI: 10-20 dong HB + DATA khi xe do line tren doan thang.
+- mode=MANUAL: khong o che do do line. Ban goc cho phep lenh F/B/... tu
+  WiFi gianh quyen AUTO, app van gui F thi xe co the thoat AUTO.
+- mode=AUTO reason=STRAIGHT cmd4=190/190/190/190: phan mem yeu cau190.
+- reason=EDGE: mot mat ria nhan line, xe vao cua.
+- reason=BOTH_EDGES: ca hai ria nhan line -> target120/120.
+- reason=EXIT_HOLD: cho cum giua on dinh 60ms sau cua/mat line.
+- reason=LOST/LOST_STOP: khong nhan line / da dung do qua thoi gian.
+Cruise trong AUTO van la bien quyet dinh toc do, cmd4 moi the hien lenh
+cac banh. cmd4 KHONG chung minh tin hieu dien/PWM tren chan hay van toc
+banh thuc te; can do tren xe neu lenh da dung ma xe van cham.
+
+Da kiem tra cu phap voi g++ + Arduino stub va 15 nhom mo phong, gom
+WiFi F (cmd4=240, cruise cu=120), AUTO giua line (cmd4=190), dung,
+32 mau cam bien, 10000 chu ky tron. CHUA build AVR/chay xe.

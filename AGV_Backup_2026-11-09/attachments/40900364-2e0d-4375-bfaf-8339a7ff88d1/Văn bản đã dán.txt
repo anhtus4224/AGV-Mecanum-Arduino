@@ -1,0 +1,109 @@
+Tôi đang làm 1 dự án xe và bản tóm tắt như sau tôi đính kèm đây. bạn cứ đọc qua file agv_mecanum_chuan ( tôi đổi tên từ file agv_mecanum_v15) nó đã được tôi thay đổi 1 vài thông số thành :
+LINE_BASE_SPEED = 120   LINE_FAST_SPEED = 180 
+RAMP_UP_STEP = 2     CENTER_HOLD_MS = 500
+SLEW_STEP = 40          ENABLE_TURN_PULSE = true, PULSE_MIN_A = 2.0f, ON/OFF = 40/25 ms
+HOLD_LAST_MS = 150, CREEP_MS = 300, SEARCH_MAX_MS = 1200
+WIFI_MAX_SPEED = 240    DEBUG_HEARTBEAT = true, DEBUG_RX = true.
+Và đây là những nhận định về phần sửa chữa lỗi vì xe tôi muốn là phải 
+đạt ttốc độ cao nhưng thực tế xe đang gặp vấn đề là lệch 1 xíu từ mắt 3 sáng mắt 2 hoặc 4 thì nó sẽ khựng lại điều chỉnh ngay làm giảm đi tốc độ đang chạy ở tốc độ cao. phạm vi hoạt động như này đã tính toán ( Tính toán kích thước và chiều dài đường chạy
+Căn cứ vào kích thước ô gạch lát sàn $80 \times 80\text{ cm}$ trong ảnh:
+
+- Đặc tính hình học đoạn cua:
+- Cung cua uốn đổi hướng $90^\circ$ chuẩn, nằm trọn vẹn trong một góc phần tư của ô gạch với bán kính cong $R \approx 80\text{ cm}$.
+- 
+
+- Chiều dài một đoạn cua:
+- 
+
+- $$L_{\text{cua}} = \frac{1}{4} \times 2\pi R = \frac{\pi \times 80}{2} \approx 40 \times 3.1416 \approx \mathbf{125.6\text{ cm}}$$
+Bảng tổng hợp chiều dài toàn bộ lộ trình:
+
+Phân đoạnQuy cách số ô gạchChiều dài thực tếĐoạn thẳng 12 ô gạch ($2 \times 80\text{ cm}$)$160\text{ cm}$Đoạn cua 1Cung tròn $90^\circ$ ($R=80\text{ cm}$)$\approx 125.6\text{ cm}$Đoạn thẳng 22 ô gạch ($2 \times 80\text{ cm}$)$160\text{ cm}$Đoạn cua 2Cung tròn $90^\circ$ ($R=80\text{ cm}$)$\approx 125.6\text{ cm}$Đoạn thẳng 32 ô gạch ($2 \times 80\text{ cm}$)$160\text{ cm}$
+- Tổng chiều dài toàn bộ tuyến đường:
+- 
+
+- $$L_{\text{tổng}} = 160 + 125.6 + 160 + 125.6 + 160 = \mathbf{731.2\text{ cm}} \approx \mathbf{7.31\text{ mét}}$$
+Và dây là nhận định :
+### I. Nhận định chi tiết từ thực tế video xe chạy
+
+Quan sát kỹ từng giây trong video `video_1.mp4` (từ giây 00:00 đến 00:48) khi xe chạy trên sa bàn thực tế:
+
+1. **Ở các đoạn thẳng (giây 00:00 - 00:05, 00:20 - 00:26, 00:37 - 00:45):**
+* Đèn LED đỏ trên thanh 5 mắt TCRT5000 liên tục nhảy qua lại giữa mắt 3 (M) và mắt 2 (L1) hoặc mắt 4 (R1).
+* Mỗi lần LED vừa chớm dịch sang mắt 2 hoặc 4, xe phát ra tiếng khựng cơ khí rất rõ, đuôi xe lắc nhẹ và thân xe bị ghì chậm lại tức thì. Xe không thể tích lũy đà để bứt phá lên dải tốc độ cao mà chỉ bò đều đều quanh mức cơ sở.
+
+
+2. **Ở các đoạn cua (giây 00:06 - 00:18 và 00:27 - 00:36):**
+* Xe bám vòm cong $R \approx 80\text{ cm}$ tương đối an toàn và ổn định. Điều này chứng minh **cơ chế bẻ lái ở dải tốc độ thấp ($115 - 120\text{ PWM}$) hiện tại đã chuẩn**, vấn đề duy nhất cần giải quyết là **loại bỏ hiện tượng khựng giật ở đoạn thẳng** và **chủ động ép tốc độ lên 200 PWM**.
+
+
+
+---
+
+### II. Bóc tách nguyên nhân kỹ thuật cốt lõi trong logic code
+
+Nguyên nhân khiến xe bị khựng giật khi lệch nhẹ từ mắt 3 sang mắt 2 hoặc 4 xuất phát từ **3 xung đột phần mềm**:
+
+1. **Xung đột bảng nội suy `INNER_TBL` với độ lệch thực tế:**
+* Trong code khai báo: `INNER_TBL[5] = { 120, 0, 0, 0, 0 }`.
+
+
+* Phần tử `0` tương ứng khi vạch ở tâm ($a = 0$), còn phần tử `1` tương ứng khi lệch sang mắt bên cạnh ($a = 1.0$ hoặc $2.0$).
+
+
+* Khi xe đang chạy thẳng ở tốc độ cao, chỉ cần thân xe hơi rung khiến vạch dịch nhẹ sang mắt 2 hoặc 4 ($a \ge 1.0$), hàm `lerpTbl` lập tức kéo bánh bên trong **về thẳng $0\text{ PWM}$ (khóa cứng bánh trong)**.
+
+
+* Đang chạy nhanh mà một bên bánh bị ngắt điện về 0 đột ngột sẽ tạo ra lực cản xoay cực lớn, làm xe khựng giật và mất toàn bộ gia tốc.
+
+
+2. **Cơ chế xung nhấp nhả `ENABLE_TURN_PULSE` kích hoạt sai thời điểm:**
+* Ngưỡng `PULSE_MIN_A` đang đặt là `2.0f`. Trọng số của mắt 2 và 4 chính là $2.0$.
+
+
+* Do đó, chỉ cần một mình mắt 2 hoặc mắt 4 bắt vạch, thuật toán coi đó là "cua gắt kiểu Osoyoo" và kích hoạt chu kỳ: **đẩy 40ms rồi phanh 25ms**. Trên đoạn thẳng, việc phanh ngắt quãng 25ms liên tục biến chuyển động thành từng đợt giật cục.
+
+
+
+
+3. **Bộ đếm thời gian tăng tốc bị reset liên tục:**
+* Dòng code `lastDeviationTime = now` liên tục bị gọi lại mỗi khi có dao động nhỏ. Xe không bao giờ giữ được trạng thái "thẳng tuyệt đối" đủ lâu để kích hoạt dòng lệnh gia tốc `cruiseSpeed += RAMP_UP_STEP`.
+
+
+
+
+
+---
+
+### III. Giải pháp kỹ thuật và thuật toán để đưa cho AI lập trình
+
+Để AI viết code đúng ý và giải quyết triệt để bài toán đạt **200 PWM ở 3 đoạn thẳng $160\text{ cm}$** mà không văng ở **2 đoạn cua $125.6\text{ cm}$**, hãy yêu cầu AI tuân thủ đúng 4 giải pháp cấu trúc sau:
+
+#### 1. Tách biệt hoàn toàn "Vùng bám thẳng tốc độ cao" và "Vùng ôm cua"
+
+* **Quy tắc vùng thẳng (Cụm 3 mắt giữa: Mắt 2, 3, 4):**
+* Điều kiện: Miễn là vạch **chưa chạm vào 2 mắt rìa ngoài cùng (L2 và R2)**.
+* Tốc độ: Ép trực tiếp cả 2 bên bánh chạy ở mức **`LINE_FAST_SPEED = 200`** (bỏ cơ chế tăng tốc từng bước phức tạp).
+* Xử lý lệch: Tuyệt đối **không gọi bảng `INNER_TBL` (không được khóa bánh trong về 0)** và **không bật xung `ENABLE_TURN_PULSE**`.
+* Cân lái: Sử dụng vi sai tỉ lệ mượt mà: bánh phía vạch lệch chỉ giảm nhẹ tối đa $15 - 20\text{ PWM}$ (`target = 200 - trim`), bánh ngoài giữ nguyên $200$. Cả 4 bánh vẫn lăn tiến mạnh mẽ, triệt tiêu hoàn toàn hiện tượng khựng giật.
+
+
+
+#### 2. Kích hoạt ôm cua gắt chỉ khi vạch chạm mắt rìa (L2 hoặc R2)
+
+* Khi vạch dạt ra mắt 1 (L2) hoặc mắt 5 (R2): Xe hiểu là đã bắt đầu vào vòm cua $R \approx 80\text{ cm}$.
+* Lúc này xe mới lập tức:
+* Hạ tốc độ cơ sở về an toàn: **`LINE_BASE_SPEED = 115 - 120`**.
+* Khóa bánh trong về $0\text{ PWM}$, đẩy bánh ngoài lên $185 - 195\text{ PWM}$ để bo tròn cung cua $125.6\text{ cm}$ sát vạch mà không bị quán tính văng biên.
+* Kích hoạt xung hỗ trợ nhấp nhả (nếu cần) với ngưỡng $a \ge 2.5f$.
+
+
+
+#### 3. Thuật toán phân vùng hãm tốc theo thời gian cho đoạn thẳng $160\text{ cm}$ (Timing-based Deceleration)
+
+* Vì đoạn thẳng dài $160\text{ cm}$ chỉ mất khoảng $1.6 - 1.8\text{ giây}$ để chạy hết ở tốc độ 200 PWM:
+* Đặt một bộ đếm thời gian chạy thẳng: Khi xe bắt đầu vào đoạn thẳng, cho phép phóng hết ga **$200\text{ PWM}$ trong $1.0\text{ giây}$ đầu tiên** (xe đi được khoảng $110 - 120\text{ cm}$).
+* Sau $1.0\text{ giây}$, tự động ghìm trước tốc độ xuống mức đệm **$135\text{ PWM}$** trong $0.3\text{ giây}$ tiếp theo.
+* Việc chủ động hạ ga trước khi cảm biến chạm vào vạch cong sẽ triệt tiêu động năng quán tính, giúp xe chuyển tiếp vào khúc cua $90^\circ$ mượt mà tuyệt đối mà không bị trượt bánh.
+
+Hãy giải quyết đưa ra giải pháp cũng như sauwr chữa code lại nếu tôi muốn nó chạy ở tốc độ cao là 200 hoặc 190 . Nhưng phải bám cua và ko bị văng ra n=ngoài vạch line, và khi cua ko được giật ngược bánh xe để hãm. đưa ra giải pháp đi rồi sao đó tôi mới quyết địnhcho bạn chỉnh sửa code
