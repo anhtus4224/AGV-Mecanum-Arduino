@@ -5,7 +5,7 @@ Nguồn, hash và phạm vi: PROVENANCE.json. Không có kết nối trực ti�
 | Cấp kiểm tra | Kết quả | Giới hạn |
 |---|---|---|
 | Cú pháp Python | py_compile và grammar Python 3.6 qua | Runtime kiểm thử Python 3.12; chưa chạy Jetson Python 3.6 |
-| Gateway Flask | 26 unit test qua | Serial giả; không có thiết bị thật |
+| Gateway Flask | 32 unit test qua | Serial giả; không có thiết bị thật |
 | Mixer/FSM C++ | Qua với g++17 -Wall -Wextra -Werror | Kiểm thử logic host, không thay cho AVR |
 | Toàn sketch với Arduino stub | Protocol CRC, sai bounds, replay, không cướp phiên, timeout manual/AUTO, reconnect và thời gian mẫu sau pulseIn qua | Stub không phải mô phỏng chính xác thời gian/điện |
 | Chromium thực, HTTP Flask loopback | 6 mục qua: W+A, đủ 4 chéo, nhả từng phím, reset, hai chủ, joystick ở viewport điện thoại | USB/camera giả; chưa thử màn cảm ứng hoặc WiFi xe thật |
@@ -59,3 +59,7 @@ Xem ACK_FIX.md. Bản trước mất ACK nếu ACK tới trước khi write tr�
 ## Hotfix PING cũ
 
 Xem PING_FIX.md. Dữ liệu người dùng chỉ rõ pending P/413 ms gây ACK_TIMEOUT. Khi ACK OK mới hơn tồn tại, chỉ loại PING cũ; không loại ACK lệnh chạy/dừng đang thiếu. 26 test gateway qua; firmware/ngưỡng timeout giữ nguyên; chưa thử trực tiếp trên hardware.
+
+## SETPOINTFIX
+
+Xem SETPOINT_FIX.md: D cũ được loại chỉ khi setpoint/STOP/mode mới đã ACK OK. STOP và D mới nhất thiếu ACK/PWM cũ vẫn timeout. 32 test qua, không đổi firmware/ngưỡng. Diagnostic thêm version và sequence pending. Chưa thử trực tiếp bản sửa trên xe.

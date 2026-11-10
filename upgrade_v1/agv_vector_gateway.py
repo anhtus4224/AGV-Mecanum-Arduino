@@ -74,12 +74,17 @@ class Gateway:
                     if old[1]=='D':self.g['state']['last_drive_ack']=dict(ack)
                     if old[1]=='H' and status=='OK':self.ready=True;self.g['link_ready']=True
                     if status=='OK':
-                        # A later acknowledged frame proves parser progress past older
-                        # heartbeat probes. Retire ONLY those probes, never D/S/mode/config.
-                        superseded=[n for n,entry in self.pending.items() if n<seq and entry[1]=='P']
-                        for n in superseded:self.pending.pop(n,None)
-                        if superseded:
-                            self.g['state']['ping_ack_superseded']=self.g['state'].get('ping_ack_superseded',0)+len(superseded)
+                        # D is a replaceable setpoint, not a queued motion job.
+                        # A newer accepted setpoint/STOP/mode supersedes older D frames.
+                        # PING alone never proves a drive/STOP was accepted.
+                        stale_ping=[n for n,entry in self.pending.items() if n<seq and entry[1]=='P']
+                        stale_drive=[n for n,entry in self.pending.items()
+                                     if n<seq and entry[1]=='D' and old[1] in ('D','S','A','M')]
+                        for n in stale_ping+stale_drive:self.pending.pop(n,None)
+                        if stale_ping:
+                            self.g['state']['ping_ack_superseded']=self.g['state'].get('ping_ack_superseded',0)+len(stale_ping)
+                        if stale_drive:
+                            self.g['state']['drive_ack_superseded']=self.g['state'].get('drive_ack_superseded',0)+len(stale_drive)
                     if status!='OK':self.g['state']['serial_error']='Mega từ chối: '+status
             return
         if line=='AGV:VECTOR1':return
@@ -175,7 +180,7 @@ class Gateway:
                 if not alive:self.owner=None
                 if now-self.last_motion>.4 or late_ack:
                     if late_ack:
-                        pending=[{'op':op,'age_ms':round((now-start)*1000)} for start,op in self.pending.values() if now-start>.4]
+                        pending=[{'sequence':n,'op':op,'age_ms':round((now-start)*1000)} for n,(start,op) in self.pending.items() if now-start>.4]
                         self.link_fault('ACK_TIMEOUT','Phần mềm đóng liên kết: quá hạn ACK',{'pending':pending[:8],'last_ack':dict(self.g['state'].get('vector_ack') or {}),'motion_age_ms':round((now-self.last_motion)*1000)})
                     else:
                         self.link_fault('MOTION_TIMEOUT','Phần mềm đóng liên kết: phản hồi PWM quá cũ',{'age_ms':round((now-self.last_motion)*1000)})
@@ -241,7 +246,7 @@ class Gateway:
         def diagnostics():
             with self.lock:
                 now=time.monotonic();m=self.g.get('motion_feedback')
-                return jsonify(ready=self.ready,port=self.g['state'].get('port'),
+                return jsonify(gateway_revision='SETPOINT_ACK_V1',ready=self.ready,port=self.g['state'].get('port'),
                     motion_age_ms=round((now-m['received'])*1000) if m else None,
                     current_pwm=m['wheels'] if m else None,
                     last_drive_ack=self.g['state'].get('last_drive_ack'),

@@ -141,6 +141,40 @@ class Tests(unittest.TestCase):
   ping,_=self.gateway.write('P');drive,_=self.gateway.write('D',255,0,0)
   self.gateway.receive('ACK:{},MODE'.format(drive['sequence']))
   self.assertIn(ping['sequence'],self.gateway.pending)
+ def test_new_drive_ack_retires_old_setpoint(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  old,_=self.gateway.write('D',255,0,0);self.gateway.pending[old['sequence']]=(time.monotonic()-.407,'D')
+  new,_=self.gateway.write('D',0,255,0);self.gateway.receive('ACK:{},OK'.format(new['sequence']))
+  self.gateway.watchdog();self.assertTrue(self.gateway.ready)
+  self.assertNotIn(old['sequence'],self.gateway.pending)
+ def test_stop_ack_retires_old_drive(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  old,_=self.gateway.write('D',255,0,0);stop,_=self.gateway.stop()
+  self.gateway.receive('ACK:{},OK'.format(stop['sequence']))
+  self.assertNotIn(old['sequence'],self.gateway.pending)
+ def test_new_drive_ack_never_retires_missing_stop(self):
+  self.claim();n=self.gateway.seq;self.gateway.pending[n]=(time.monotonic()-.407,'S')
+  new,_=self.gateway.write('D',0,255,0);self.gateway.receive('ACK:{},OK'.format(new['sequence']))
+  self.gateway.watchdog();self.assertFalse(self.gateway.ready)
+  self.assertTrue(any(p['op']=='S' and p['sequence']==n for p in self.gateway.link_events[-1]['details']['pending']))
+ def test_rejected_new_drive_does_not_retire_old_drive(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  old,_=self.gateway.write('D',255,0,0);new,_=self.gateway.write('D',0,255,0)
+  self.gateway.receive('ACK:{},MODE'.format(new['sequence']))
+  self.assertIn(old['sequence'],self.gateway.pending)
+ def test_forward_release_strafe_with_dropped_old_ack(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  for f,right in [(255,0)]*8+[(0,0)]+[(0,255)]*8:
+   result,_=self.gateway.stop() if not f and not right else self.gateway.write('D',f,right,0)
+   if not f and not right or result['sequence']%5!=0:self.gateway.receive('ACK:{},OK'.format(result['sequence']))
+  self.assertFalse(self.gateway.pending)
+  now=time.monotonic();self.gateway.last_motion=now+.45;self.gateway.watchdog(now+.45)
+  self.assertTrue(self.gateway.ready)
+ def test_fresh_drive_ack_does_not_hide_stale_pwm(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  drive,_=self.gateway.write('D',255,0,0);self.gateway.receive('ACK:{},OK'.format(drive['sequence']))
+  self.gateway.last_motion=time.monotonic()-.5;self.gateway.watchdog()
+  self.assertFalse(self.gateway.ready);self.assertEqual(self.gateway.link_events[-1]['code'],'MOTION_TIMEOUT')
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')
   self.assertEqual(int(crc,16),binascii.crc_hqx(body,0xffff))
