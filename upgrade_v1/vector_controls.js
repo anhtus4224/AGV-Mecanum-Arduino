@@ -25,12 +25,12 @@ async function controlFetch(url,options={}){
   const d=await res.json();if(!res.ok)throw Error(d.msg||d.error);controlStatus(d.msg||d.command||'Đã gửi');return d;
  }catch(e){controlStatus(e.message,true);return null;}
 }
-async function transmitVector(v){
+async function transmitVector(v,ticket){
  if(!ownsControl)return;
  const d=latestTelemetry;
  if(!d)return;
  return api('/control/vector',{drive:v[0],strafe:v[1],rotate:v[2],sequence:++controlSequence,
-  issued_ms:d.control_server_time_ms+performance.now()-lastServerControlReceived,
+  ticket:ticket,
   environment:d.visualization.environment,generation:d.visualization.generation});
 }
 async function stopCmd(force=false){clearHeldInputs();if(!ownsControl&&!force)return;return controlFetch('/mecanum_control?estop=1',{keepalive:true});}
@@ -49,7 +49,7 @@ byId('set_profile').onclick=async()=>{try{
 setInterval(async()=>{
  if(!ownsControl||vectorFlight)return;
  vectorFlight=true;
- try{await api('/control/renew');const v=intentVector();if(v.some(x=>x))await transmitVector(v);}
+ try{const renewal=await api('/control/renew');const v=intentVector();if(v.some(x=>x))await transmitVector(v,renewal.ticket);}
  catch(e){try{await stopCmd();}finally{loseControl(e.message);}}
  finally{vectorFlight=false;}
 },80);

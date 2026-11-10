@@ -26,6 +26,7 @@ class Gateway:
         self.csrf=secrets.token_urlsafe(24)
         self.web_sequence={}
         self.owner_lease=""
+        self.tickets={}
 
     def write(self,op,f=0,right=0,rot=0):
         with self.lock:
@@ -149,6 +150,14 @@ class Gateway:
             elif now-self.last_ping>=.2:
                 self.last_ping=now;self.write('P')
 
+    def issue_ticket(self):
+        now=time.monotonic()
+        self.tickets={k:v for k,v in self.tickets.items() if now-v[0]<=.3}
+        if len(self.tickets)>=8:self.tickets.pop(next(iter(self.tickets)))
+        token=secrets.token_urlsafe(24)
+        self.tickets[token]=(now,self.owner_lease,self.g['driving_environment'],self.g['drive_generation'])
+        return token
+
     def identity(self):
         client=request.args.get('controller','')
         if not 8<=len(client)<=64 or not client.replace('_','').replace('-','').isalnum():return None
@@ -205,10 +214,11 @@ class Gateway:
                 if self.ready:
                     result,code=self.stop()
                     if code!=200:return jsonify(result),code
-                self.owner=who;self.owner_until=now+.8;self.web_sequence={};self.owner_lease=secrets.token_urlsafe(24)
+                self.owner=who;self.owner_until=now+.8;self.web_sequence={};self.owner_lease=secrets.token_urlsafe(24);self.tickets={}
                 return jsonify(status='owner',lease=self.owner_lease,msg='Đã nhận quyền; các phím cũ đã được bỏ')
         @app.route('/control/renew',methods=['POST'])
-        def renew():return jsonify(status='owner')
+        def renew():
+            with self.lock:return jsonify(status='owner',ticket=self.issue_ticket())
         @app.route('/control/release',methods=['POST'])
         def release():
             with self.lock:self.stop();self.owner=None;self.owner_until=0
@@ -229,16 +239,25 @@ class Gateway:
             try:
                 v=[float(body[k]) for k in ('drive','strafe','rotate')]
                 if any(type(body[k]) is bool for k in ('drive','strafe','rotate')) or not all(math.isfinite(x) and -1<=x<=1 for x in v):raise ValueError()
-                sequence=int(body['sequence']);issued=float(body['issued_ms'])
-                if type(body['sequence']) is not int or sequence<1 or sequence>9007199254740991 or not math.isfinite(issued) or not -100<=time.monotonic()*1000-issued<=300:raise ValueError()
-                if body.get('environment')!=self.g['driving_environment'] or body.get('generation')!=self.g['drive_generation']:raise ValueError()
-            except (ValueError,TypeError,KeyError,OverflowError):return jsonify(msg='Vector/thứ tự/thời hạn không hợp lệ'),400
+                sequence=body['sequence']
+                if type(sequence) is not int or not 1<=sequence<=9007199254740991:
+                    return jsonify(msg='Thứ tự lệnh không hợp lệ',code='SEQUENCE'),400
+            except (ValueError,TypeError,KeyError,OverflowError):
+                return jsonify(msg='Vector phải có ba số hữu hạn trong [-1,1]',code='VECTOR'),400
             with self.lock:
                 key=self.identity()
                 if key!=self.owner or time.monotonic()>=self.owner_until:return jsonify(msg='Quyền lái đã hết'),409
                 old=self.web_sequence
                 if sequence<=old.get(key,0):return jsonify(status='ignored_stale')
-                old[key]=sequence;self.web_sequence={key:sequence} # only the current owner needs state
+                if body.get('environment')!=self.g['driving_environment'] or body.get('generation')!=self.g['drive_generation']:
+                    return jsonify(msg='Môi trường vừa đổi; nhả điều khiển rồi thử lại',code='CONTEXT'),409
+                token=body.get('ticket')
+                issued=self.tickets.pop(token,None) if isinstance(token,str) else None
+                if issued is None or issued[1:]!=(self.owner_lease,self.g['driving_environment'],self.g['drive_generation']):
+                    return jsonify(msg='Phiếu lệnh không hợp lệ; tải lại trang và nhận quyền',code='TICKET'),409
+                if not 0<=time.monotonic()-issued[0]<=.3:
+                    return jsonify(msg='Gói điều khiển tới quá chậm (>300 ms); đã dừng. Nhận quyền lại khi mạng ổn định',code='COMMAND_EXPIRED'),409
+                old[key]=sequence;self.web_sequence={key:sequence}
                 if self.g['driving_environment']=='simulation':
                     self.g['simulation_vector']=v;self.g['simulation_vector_at']=time.monotonic()
                     return jsonify(status='simulation',command='VECTOR')

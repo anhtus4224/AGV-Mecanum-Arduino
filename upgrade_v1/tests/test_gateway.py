@@ -21,7 +21,7 @@ class Tests(unittest.TestCase):
  def req(self,client,path,data=None,controller='browser_123'):
   return client.post(path+'?controller='+controller,json=data or {},headers=dict(self.auth,**{'X-AGV-Lease':self.gateway.owner_lease}))
  def claim(self):return self.req(self.a,'/control/claim')
- def vector(self,seq):return {'drive':1,'strafe':1,'rotate':0,'sequence':seq,'issued_ms':time.monotonic()*1000,'environment':'real','generation':1}
+ def vector(self,seq):return {'drive':1,'strafe':1,'rotate':0,'sequence':seq,'ticket':self.gateway.issue_ticket(),'environment':'real','generation':1}
  def test_auth_csrf(self):
   self.assertEqual(self.a.get('/telemetry').status_code,401)
   self.assertEqual(self.a.post('/control/claim',headers={'Authorization':self.auth['Authorization']}).status_code,403)
@@ -46,8 +46,8 @@ class Tests(unittest.TestCase):
   self.gateway.watchdog();self.assertIn(b',S,',self.port.data[-1])
  def test_invalid_vector_no_write(self):
   self.claim();count=len(self.port.data)
-  for patch in ({'drive':float('nan')},{'drive':True},{'drive':2},{'generation':0},{'issued_ms':0}):
-   data=self.vector(2);data.update(patch);self.assertEqual(self.req(self.a,'/control/vector',data).status_code,400)
+  for patch in ({'drive':float('nan')},{'drive':True},{'drive':2},{'generation':0},{'ticket':'invalid'}):
+   data=self.vector(2);data.update(patch);self.assertEqual(self.req(self.a,'/control/vector',data).status_code,409 if 'generation' in patch or 'ticket' in patch else 400)
   self.assertEqual(count,len(self.port.data))
  def test_viewer_stop_revokes_owner(self):
   self.claim();self.req(self.a,'/control/vector',self.vector(1))
@@ -84,6 +84,18 @@ class Tests(unittest.TestCase):
   with patch('agv_vector_gateway.time.sleep',side_effect=RuntimeError('end fixture loop')):
    with self.assertRaises(RuntimeError):self.gateway.serial_worker()
   self.assertEqual(owner,self.gateway.owner);self.assertFalse(self.gateway.ready)
+ def test_ticket_expiration_stops_old_commands(self):
+  self.claim();data=self.vector(1);key=data['ticket'];value=self.gateway.tickets[key]
+  self.gateway.tickets[key]=(time.monotonic()-.31,)+value[1:]
+  count=len(self.port.data);response=self.req(self.a,'/control/vector',data)
+  self.assertEqual(response.status_code,409);self.assertEqual(response.json['code'],'COMMAND_EXPIRED')
+  self.assertEqual(count,len(self.port.data))
+ def test_ticket_is_single_use(self):
+  self.claim();data=self.vector(1);self.assertEqual(self.req(self.a,'/control/vector',data).status_code,200)
+  data['sequence']=2;self.assertEqual(self.req(self.a,'/control/vector',data).json['code'],'TICKET')
+ def test_phone_clock_does_not_affect_ticket(self):
+  self.claim();data=self.vector(1);data['issued_ms']=-1e30
+  self.assertEqual(self.req(self.a,'/control/vector',data).status_code,200)
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')
   self.assertEqual(int(crc,16),binascii.crc_hqx(body,0xffff))
