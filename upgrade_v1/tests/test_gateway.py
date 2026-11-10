@@ -120,6 +120,27 @@ class Tests(unittest.TestCase):
  def test_timeout_cause_is_retained(self):
   self.claim();self.gateway.write('D',255,0,0);self.gateway.watchdog(time.monotonic()+.45)
   self.assertEqual(self.gateway.link_events[-1]['code'],'ACK_TIMEOUT')
+ def test_newer_drive_ack_supersedes_old_ping(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  ping,_=self.gateway.write('P');n=ping['sequence'];self.gateway.pending[n]=(time.monotonic()-.413,'P')
+  drive,_=self.gateway.write('D',255,0,0);self.gateway.receive('ACK:{},OK'.format(drive['sequence']))
+  self.gateway.watchdog();self.assertTrue(self.gateway.ready);self.assertNotIn(n,self.gateway.pending)
+ def test_stop_ack_supersedes_old_ping(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  ping,_=self.gateway.write('P');stop,_=self.gateway.stop()
+  self.gateway.receive('ACK:{},OK'.format(stop['sequence']))
+  self.assertNotIn(ping['sequence'],self.gateway.pending)
+ def test_newer_ping_ack_does_not_hide_missing_drive_ack(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  drive,_=self.gateway.write('D',255,0,0);n=drive['sequence'];self.gateway.pending[n]=(time.monotonic()-.413,'D')
+  ping,_=self.gateway.write('P');self.gateway.receive('ACK:{},OK'.format(ping['sequence']))
+  self.gateway.watchdog();self.assertFalse(self.gateway.ready)
+  self.assertEqual(self.gateway.link_events[-1]['code'],'ACK_TIMEOUT')
+ def test_rejected_newer_frame_does_not_supersede_ping(self):
+  self.claim();self.gateway.receive('ACK:{},OK'.format(self.gateway.seq))
+  ping,_=self.gateway.write('P');drive,_=self.gateway.write('D',255,0,0)
+  self.gateway.receive('ACK:{},MODE'.format(drive['sequence']))
+  self.assertIn(ping['sequence'],self.gateway.pending)
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')
   self.assertEqual(int(crc,16),binascii.crc_hqx(body,0xffff))

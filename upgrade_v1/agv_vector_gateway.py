@@ -73,6 +73,13 @@ class Gateway:
                     self.g['state']['vector_ack']=ack
                     if old[1]=='D':self.g['state']['last_drive_ack']=dict(ack)
                     if old[1]=='H' and status=='OK':self.ready=True;self.g['link_ready']=True
+                    if status=='OK':
+                        # A later acknowledged frame proves parser progress past older
+                        # heartbeat probes. Retire ONLY those probes, never D/S/mode/config.
+                        superseded=[n for n,entry in self.pending.items() if n<seq and entry[1]=='P']
+                        for n in superseded:self.pending.pop(n,None)
+                        if superseded:
+                            self.g['state']['ping_ack_superseded']=self.g['state'].get('ping_ack_superseded',0)+len(superseded)
                     if status!='OK':self.g['state']['serial_error']='Mega từ chối: '+status
             return
         if line=='AGV:VECTOR1':return
@@ -169,7 +176,7 @@ class Gateway:
                 if now-self.last_motion>.4 or late_ack:
                     if late_ack:
                         pending=[{'op':op,'age_ms':round((now-start)*1000)} for start,op in self.pending.values() if now-start>.4]
-                        self.link_fault('ACK_TIMEOUT','Phần mềm đóng liên kết: quá hạn ACK',{'pending':pending[:8]})
+                        self.link_fault('ACK_TIMEOUT','Phần mềm đóng liên kết: quá hạn ACK',{'pending':pending[:8],'last_ack':dict(self.g['state'].get('vector_ack') or {}),'motion_age_ms':round((now-self.last_motion)*1000)})
                     else:
                         self.link_fault('MOTION_TIMEOUT','Phần mềm đóng liên kết: phản hồi PWM quá cũ',{'age_ms':round((now-self.last_motion)*1000)})
                     self.ready=False;self.owner=None;self.owner_until=0
