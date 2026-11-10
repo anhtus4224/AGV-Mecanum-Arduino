@@ -1,0 +1,4 @@
+# Jetson Ubuntu 18.04 / Python 3.6. OpenCV and NumPy: prefer Jetson apt packages.
+Flask>=1.1.4,<2.1; python_version < '3.7'
+Flask>=2.2,<4; python_version >= '3.7'
+pyserial>=3.3,<4

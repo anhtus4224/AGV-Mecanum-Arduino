@@ -1,0 +1,280 @@
+--- user_firmware_confirmed.ino
++++ upgrade_v1/mega_vector_v1/mega_vector_v1.ino
+@@ -1,3 +1,6 @@
++#include <Arduino.h>
++#include "VectorMotion.h"
++#include <stdio.h>
+ // AGV_CHUANDET_90_V2
+ // Dua truc tiep tren ZIP chuandet.
+ // CHUA THU TREN XE / CHUA HIEU CHUAN GOC90.
+@@ -207,6 +210,17 @@
+ uint8_t cornerBlankCount = 0;
+ uint8_t cornerCenterCount = 0;
+ 
++// VECTOR1 integration. Old line/corner implementation below is preserved.
++VmAvoid vectorAvoid;
++int actualWheels[4]={0,0,0,0},vectorTarget[4]={0,0,0,0};
++uint32_t vectorTickAt=0,motionAt=0,motionSeq=0,hostAt=0,driveAt=0;
++uint32_t hostSession=0,hostSequence=0;bool hostOwned=false,vectorManual=false;
++VmRange rangeF={999,0},rangeB={999,0},rangeL={999,0},rangeR={999,0};
++int scanLeft=999,scanRight=999,scanSideL=999,scanSideR=999,servoAngle=90;
++uint32_t servoAt=0;char frameBuffer[110];uint8_t frameLength=0;bool frameActive=false,frameOverflow=false;
++void vectorService();void vectorRead();void vectorStop();void vectorMotion();
++void vectorBeginAvoidance();void vectorSonar();void vectorApply(int f,int s,int rot,int cap);
++
+ // KHAI BAO HAM
+ void stopAllMotors();
+ void motor(int rpwm, int lpwm, int v);
+@@ -305,10 +319,17 @@
+ 
+ void loop() {
+   checkModeButton();
+-  readSerialCommands();
+-  updateSonar();
+-
+-  if (isLineTrackingMode) {
++  vectorRead();
++  vectorService();
++  if (vectorAvoid.phase == VmAvoid::OFF) updateSonar();
++  else vectorSonar();
++  vectorMotion();
++
++  if (vectorAvoid.phase != VmAvoid::OFF) {
++    // vectorService owns motor output until handoff or an explicit STOP.
++  } else if (vectorManual) {
++    // Timed vector commands are serviced above.
++  } else if (isLineTrackingMode) {
+     handleLineAndObstacleMode();
+   } else {
+     handleManualMode();
+@@ -482,6 +503,7 @@
+ }
+ 
+ void toggleMode(const char* source) {
++  vectorManual=false; vectorAvoid.phase=VmAvoid::OFF;
+   isLineTrackingMode = !isLineTrackingMode;
+   turnState = IDLE_LINE;
+   currentCommand = 'S';
+@@ -655,6 +677,7 @@
+     case 2:
+     case 4:
+       distF = readUltrasonicCM(TRIG_FRONT, ECHO_FRONT);
++      rangeF.cm=distF; rangeF.at=millis();
+ 
+       if (distF > 3 && distF <= OBSTACLE_CM) {
+         if (frontHits < 100) {
+@@ -667,14 +690,17 @@
+ 
+     case 1:
+       distL = readUltrasonicCM(TRIG_LEFT, ECHO_LEFT);
++      rangeL.cm=distL; rangeL.at=millis();
+       break;
+ 
+     case 3:
+       distR = readUltrasonicCM(TRIG_RIGHT, ECHO_RIGHT);
++      rangeR.cm=distR; rangeR.at=millis();
+       break;
+ 
+     case 5:
+       distB = readUltrasonicCM(TRIG_BACK, ECHO_BACK);
++      rangeB.cm=distB; rangeB.at=millis();
+       break;
+   }
+ 
+@@ -685,6 +711,10 @@
+ void handleLineAndObstacleMode() {
+   unsigned long now = millis();
+ 
++  if (turnState == IDLE_LINE && rangeF.valid(now) && rangeF.cm <= 60) {
++    vectorBeginAvoidance(); return;
++  }
++
+   if (USE_ULTRASONIC && frontHits >= 2) {
+     frontHits = 0;
+ 
+@@ -694,7 +724,7 @@
+     }
+ 
+     stopAllMotors();
+-    executeCorridorAvoidance();
++    vectorBeginAvoidance();
+     return;
+   }
+ 
+@@ -1318,6 +1348,12 @@
+ }
+ 
+ void drive(int fl, int fr, int rl, int rr) {
++  // Commissioning cap applies to ALL USB-owned motion, including unchanged line/corner targets.
++  if(hostOwned){
++    int peak=max(max(abs(fl),abs(fr)),max(abs(rl),abs(rr)));
++    if(peak>vectorAvoid.cap){fl=(long)fl*vectorAvoid.cap/peak;fr=(long)fr*vectorAvoid.cap/peak;rl=(long)rl*vectorAvoid.cap/peak;rr=(long)rr*vectorAvoid.cap/peak;}
++  }
++  actualWheels[0]=fl;actualWheels[1]=fr;actualWheels[2]=rl;actualWheels[3]=rr;
+   motor(D1_RPWM, D1_LPWM, -fl);
+   motor(D2_RPWM, D2_LPWM, fr);
+   motor(D3_RPWM, D3_LPWM, -rl);
+@@ -1372,6 +1408,7 @@
+ }
+ 
+ void stopAllMotors() {
++  for(int i=0;i<4;i++)actualWheels[i]=0;
+   analogWrite(D1_RPWM, 0);
+   analogWrite(D1_LPWM, 0);
+   analogWrite(D2_RPWM, 0);
+@@ -1442,7 +1479,7 @@
+ }
+ 
+ // NE VAT CAN: GIU THEO CHUANDET
+-void executeCorridorAvoidance() {
++void executeCorridorAvoidanceReference() {
+   isExecutingAvoidance = true;
+ 
+   stopAllMotors();
+@@ -1604,4 +1641,146 @@
+ 
+   lostLineTimer = millis();
+   frontHits = 0;
+-}+}
++uint16_t vectorCrc(const char *p){uint16_t c=0xffff;while(*p){c^=(uint8_t)*p++<<8;for(int i=0;i<8;i++)c=c&0x8000?(c<<1)^0x1021:c<<1;}return c;}
++void vectorStop(){
++ stopAllMotors();vectorManual=false;vectorAvoid.phase=VmAvoid::OFF;
++ isExecutingAvoidance=false;isLineTrackingMode=false;turnState=IDLE_LINE;currentCommand='S';
++ for(int i=0;i<4;i++)vectorTarget[i]=0;
++}
++void vectorAck(uint32_t seq,const char *status){Serial.print("ACK:");Serial.print(seq);Serial.print(',');Serial.println(status);}
++void vectorFrame(){
++ char *star=strchr(frameBuffer,'*');if(!star||strlen(star+1)!=4)return;
++ *star=0;char *end=0;unsigned long check=strtoul(star+1,&end,16);
++ if(*end||check!=vectorCrc(frameBuffer))return;
++ char *items[8];int count=0;char *save=0;
++ for(char *t=strtok_r(frameBuffer,",",&save);t;t=strtok_r(0,",",&save)){
++  if(count>=8)return;
++  items[count++]=t;
++ }
++ if(count!=8||strcmp(items[0],"V1")||strlen(items[3])!=1)return;
++ uint32_t sid=0,seq=0;
++ for(int k=1;k<=2;k++){
++  uint32_t n=0;const char *p=items[k];if(!*p)return;
++  while(*p){if(*p<'0'||*p>'9'||n>429496729UL||(n==429496729UL&&*p>'5'))return;n=n*10+(*p++-'0');}
++  if(k==1)sid=n;else seq=n;
++ }
++ char op=items[3][0];int vals[4];
++ for(int k=4;k<8;k++){
++  if(strlen(items[k])>5)return;
++  char *e=0;long v=strtol(items[k],&e,10);
++  if(*e||v < -255||v>350)return;
++  vals[k-4]=v;
++ }
++ int f=vals[0],s=vals[1],r=vals[2],ttl=vals[3];
++ uint32_t now=millis();
++ if(op=='H'){
++  if(!sid||(hostOwned&&sid!=hostSession&&(uint32_t)(now-hostAt)<=700)){vectorAck(seq,"BUSY");return;}
++  if(hostOwned&&sid==hostSession&&seq<=hostSequence)return;
++  vectorStop();hostOwned=true;hostSession=sid;hostSequence=seq;hostAt=now;vectorAck(seq,"OK");return;
++ }
++ if(!hostOwned||sid!=hostSession)return;
++ if(op=='S'){vectorStop();hostAt=now;if(seq>hostSequence)hostSequence=seq;vectorAck(seq,"OK");return;}
++ if(seq<=hostSequence||ttl<100||ttl>350||abs(f)>255||abs(s)>255||abs(r)>255)return;
++ if(op!='P'&&op!='D'&&op!='A'&&op!='M'&&op!='E')return;
++ hostSequence=seq;hostAt=now;
++ if(op=='D'){
++  if(isLineTrackingMode||vectorAvoid.phase!=VmAvoid::OFF){vectorAck(seq,"MODE");return;}
++  vmMix(f,s,r,vectorAvoid.cap,vectorTarget);vectorManual=true;driveAt=now;currentCommand='V';
++ }else if(op=='A'){
++  if(!isLineTrackingMode){vectorStop();toggleMode("VECTOR1");}
++ }else if(op=='M'){vectorStop();}
++ else if(op=='E'){
++  if(isLineTrackingMode||vectorManual){vectorAck(seq,"MODE");return;}
++  if((f!=0&&f!=1)||s<40||s>255){vectorAck(seq,"RANGE");return;}
++  vectorAvoid.enabled=f;vectorAvoid.cap=s;
++ }
++ vectorAck(seq,"OK");
++}
++void vectorRead(){
++ // Consume all framed USB as frames. Never pass their letters to legacy parsing.
++ int budget=96;
++ while(Serial.available()&&budget--){char c=Serial.read();
++  if(c=='?'){if(!frameActive)Serial.println("AGV:VECTOR1");continue;}
++  if(c=='@'){frameActive=true;frameOverflow=false;frameLength=0;continue;}
++  if(frameActive){
++   if(c=='\n'){if(!frameOverflow){frameBuffer[frameLength]=0;vectorFrame();}frameActive=false;}
++   else if(c!='\r'){if(frameLength<sizeof(frameBuffer)-1)frameBuffer[frameLength++]=c;else frameOverflow=true;}
++  }else if(c=='Z'||c=='z'){vectorStop();}
++ }
++ // Old ESP retains single-character operation ONLY before USB claims the session.
++ budget=32;while(Serial2.available()&&budget--){char c=Serial2.read();
++  if(c=='Z'||c=='S'||c==' '){vectorStop();}
++  else if(!hostOwned)parseSingleChar(c,'E');
++ }
++}
++void vectorApply(int f,int s,int rot,int cap){vmMix(f,s,rot,cap,vectorTarget);}
++void vectorBeginAvoidance(){
++ stopAllMotors();vectorManual=false;isExecutingAvoidance=true;
++ vectorAvoid.start(millis());servoAngle=135;scanLeft=scanRight=999;
++ scanSideL=rangeL.valid(millis())?rangeL.cm:999;scanSideR=rangeR.valid(millis())?rangeR.cm:999;
++ for(int i=0;i<4;i++)vectorTarget[i]=0;
++}
++void vectorSonar(){
++ if(millis()-lastSonarTime<40)return;
++ lastSonarTime=millis();
++ if(vectorAvoid.phase<VmAvoid::OUT)return;
++ switch(sonarSlot++%4){
++  case 0:rangeF.cm=distF=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);rangeF.at=millis();break;
++  case 1:rangeL.cm=distL=readUltrasonicCM(TRIG_LEFT,ECHO_LEFT);rangeL.at=millis();break;
++  case 2:rangeR.cm=distR=readUltrasonicCM(TRIG_RIGHT,ECHO_RIGHT);rangeR.at=millis();break;
++  case 3:rangeB.cm=distB=readUltrasonicCM(TRIG_BACK,ECHO_BACK);rangeB.at=millis();break;
++ }
++}
++void vectorService(){
++ uint32_t now=millis();
++ if(hostOwned&&(uint32_t)(now-hostAt)>700){vectorStop();return;}
++ // Same software servo pulse range as original; one pulse per cycle, no hold loop.
++ if(vectorAvoid.phase>=VmAvoid::SCAN_LEFT&&vectorAvoid.phase<=VmAvoid::SCAN_CENTER){
++  if((uint32_t)(now-servoAt)>=20){servoAt=now;digitalWrite(SERVO_PIN,HIGH);delayMicroseconds(map(servoAngle,0,180,600,2400));digitalWrite(SERVO_PIN,LOW);}
++  if((uint32_t)(now-vectorAvoid.since)>=440){
++   if(vectorAvoid.phase==VmAvoid::SCAN_LEFT){scanLeft=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);servoAngle=45;vectorAvoid.enter(VmAvoid::SCAN_RIGHT,now);}
++   else if(vectorAvoid.phase==VmAvoid::SCAN_RIGHT){scanRight=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);servoAngle=90;vectorAvoid.enter(VmAvoid::SCAN_CENTER,now);}
++   else{
++    rangeF.cm=distF=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);rangeF.at=millis();
++    rangeL.cm=distL=readUltrasonicCM(TRIG_LEFT,ECHO_LEFT);rangeL.at=millis();
++    rangeR.cm=distR=readUltrasonicCM(TRIG_RIGHT,ECHO_RIGHT);rangeR.at=millis();
++    rangeB.cm=distB=readUltrasonicCM(TRIG_BACK,ECHO_BACK);rangeB.at=millis();
++    vectorAvoid.choose(rangeL.cm,rangeR.cm,scanLeft,scanRight,now);
++   }
++  }
++ }
++ if((uint32_t)(now-vectorTickAt)<10)return;
++ vectorTickAt=now;
++ if(vectorAvoid.phase>=VmAvoid::OUT&&vectorAvoid.phase<=VmAvoid::CENTER){
++  int f=0,s=0;vectorAvoid.tick(now,rangeF,rangeB,rangeL,rangeR,digitalRead(A2)==LINE_DETECTED,f,s);
++  vectorApply(f,s,0,vectorAvoid.cap);
++ }
++ if(vectorAvoid.phase==VmAvoid::FAULT){
++  const char *why=vectorAvoid.fault;vectorStop();Serial.print("AVOID_FAULT:");Serial.println(why);return;
++ }
++ if(vectorAvoid.phase==VmAvoid::HANDOFF && abs(actualWheels[0]-actualWheels[1]-actualWheels[2]+actualWheels[3])>48){
++  // Finish removing lateral wheel demand before giving the differential line controller ownership.
++  vectorAvoid.enter(VmAvoid::CENTER,now);
++ }
++ if(vectorAvoid.phase==VmAvoid::HANDOFF){
++  // A2 was stable for 80 ms. Seed the original controller without an inserted motor stop.
++  int l=(actualWheels[0]+actualWheels[2])/2,rr=(actualWheels[1]+actualWheels[3])/2;
++  resetLineTracking();curL=l;curR=rr;lastLeftCmd=l;lastRightCmd=rr;
++  lastErr=0;lostLineTimer=now;lastControlTime=now;postAvoidanceBlindTimer=now;
++  vectorAvoid.phase=VmAvoid::OFF;isExecutingAvoidance=false;currentCommand='F';return;
++ }
++ if(vectorManual&&(uint32_t)(now-driveAt)>250){vectorStop();return;}
++ if(vectorManual||vectorAvoid.active()){
++  int out[4];for(int i=0;i<4;i++)out[i]=vmRamp(actualWheels[i],vectorTarget[i],8);
++  drive(out[0],out[1],out[2],out[3]);
++ }
++}
++void vectorMotion(){
++ uint32_t now=millis();if((uint32_t)(now-motionAt)<80)return;motionAt=now;
++ Serial.print("MOTION:");Serial.print(++motionSeq);Serial.print(',');Serial.print(now);
++ for(int i=0;i<4;i++){Serial.print(',');Serial.print(actualWheels[i]);}
++ Serial.print(',');Serial.print(isLineTrackingMode?1:0);Serial.print(',');Serial.print((int)turnState);
++ Serial.print(',');Serial.println(isExecutingAvoidance?1:0);
++ Serial.print("VECTOR_STATE:");Serial.print((int)vectorAvoid.phase);Serial.print(',');Serial.print(vectorAvoid.cap);Serial.print(',');Serial.println(vectorAvoid.enabled?1:0);
++}

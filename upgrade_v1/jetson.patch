@@ -1,0 +1,292 @@
+--- stream_server_reset_v1.py
++++ upgrade_v1/stream_server_vector_v1.py
+@@ -9,7 +9,7 @@
+     serial = None
+ 
+ app = Flask(__name__)
+-SERVER_VERSION = "OXY_DRIVE_V7_RESET_V1"
++SERVER_VERSION = "VECTOR_AVOID_V1"
+ 
+ # ------------------------------------------------------------------------------
+ # TRẠNG THÁI HỆ THỐNG
+@@ -388,7 +388,7 @@
+ 
+     # 3. Làm phẳng dao động bằng Exponential Moving Average (EMA)
+     last_est = sonar_estimated.get(direction, 100.0)
+-    est_val = (ALPHA_SONAR * median_val) + ((1.0 - ALPHA_SONAR) * last_est)
++    est_val = min(val_clean, (ALPHA_SONAR * median_val) + ((1.0 - ALPHA_SONAR) * last_est)) # React immediately to an approaching object; display filter only
+     sonar_estimated[direction] = round(est_val, 1)
+     
+     return int(sonar_estimated[direction])
+@@ -635,7 +635,7 @@
+ import uuid
+ visual_server_id = uuid.uuid4().hex
+ map_lock = threading.RLock()
+-map_dir = Path(os.environ.get('AGV_MAP_DIR', str(Path.home() / '.local/share/agv-dashboard'))).expanduser()
++map_dir = Path(os.environ.get('AGV_MAP_DIR', str(Path.home() / '.local/share/agv-dashboard-vector-v1'))).expanduser()
+ map_error = ''
+ 
+ 
+@@ -969,8 +969,8 @@
+ 
+ # PWM output estimate, not measured odometry. Gains only affect the drawing.
+ # Calibrate at the actual PWM/battery/load used; a 1 m error limit is unverified.
+-AUTO_LINEAR_MPS = float(os.environ.get('AGV_AUTO_FULL_PWM_MPS', '0.50'))
+-AUTO_STRAFE_MPS = float(os.environ.get('AGV_AUTO_FULL_PWM_STRAFE_MPS', '0.40'))
++AUTO_LINEAR_MPS = float(os.environ.get('AGV_AUTO_FULL_PWM_MPS', '0.236'))
++AUTO_STRAFE_MPS = float(os.environ.get('AGV_AUTO_FULL_PWM_STRAFE_MPS', '0.18'))
+ AUTO_TURN_RADPS = float(os.environ.get('AGV_AUTO_FULL_PWM_RADPS', '1.50'))
+ if not all(math.isfinite(x) and 0 < x <= 10 for x in
+            (AUTO_LINEAR_MPS, AUTO_STRAFE_MPS, AUTO_TURN_RADPS)):
+@@ -1350,6 +1350,8 @@
+     now = time.monotonic()
+     # Check raw validity ages at response time, including when no worker has started yet.
+     payload = dict(state)
++    sonar_at=state.get('sonar_received_monotonic')
++    payload['sonar_age_ms']=int((now-sonar_at)*1000) if sonar_at else None
+     payload['server_version'] = SERVER_VERSION
+     payload['control_server_time_ms'] = now*1000
+     age = int((now-data_time)*1000) if data_time else None
+@@ -1699,7 +1701,10 @@
+         body.camera-zoomed #camera_view {height:100vh!important;height:100dvh!important;max-height:none!important;}
+ 
+         .driving-mobile:not(.driving-landscape) #camera_view {aspect-ratio:4/3;min-height:140px;max-height:calc(100vh - 470px);max-height:calc(100dvh - 470px);}
+-    </style>
++    #vector_joystick{touch-action:none;user-select:none;width:130px;height:130px;border:2px solid #38bdf8;border-radius:50%;margin:8px auto;text-align:center;display:flex;align-items:center;justify-content:center;background:#12314a;white-space:pre-line;}
++.vector-owner{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;align-items:center}.vector-owner button{min-height:32px;}.vector-owner label{max-width:250px;}
++.driving-mobile #drive_dock{max-height:58dvh;overflow:auto;} .driving-mobile .vector-owner{font-size:10px;}
++</style>
+ </head>
+ <body data-mobile-view="camera">
+     <div class="header-bar">
+@@ -1752,7 +1757,12 @@
+                 <button class="ctrl-btn" data-act="B"><span class="drive-label">LÙI</span><span class="drive-shortcut">(S)</span></button>
+                 <button class="ctrl-btn btn-mode" data-act="X"><span class="drive-label">LÁI TAY ↔ TỰ HÀNH</span><span class="drive-shortcut">(X)</span></button>
+             </div>
+-            <div id="control_status" role="status">Giữ phím gần nhất để ưu tiên hướng; nhả ra trở về phím còn giữ.</div>
++            <div id="vector_feedback" role="status">VECTOR1 · Chờ dữ liệu Mega</div><div class="vector-owner"><button type="button" id="claim_control">Nhận quyền lái</button><button type="button" id="release_control">Nhả quyền</button>
++<label>Mức thử PWM <select id="profile_cap"><option>80</option><option>120</option><option>160</option><option>200</option><option>255</option></select></label>
++<label><input type="checkbox" id="profile_armed">Bật né thực nghiệm</label>
++<label><input type="checkbox" id="profile_confirm">Đã kiểm tra kích thước thân xe, khoảng trống và xe đã dừng</label><button type="button" id="set_profile">Áp dụng khi dừng</button></div>
++<div class="btn-grid"><button class="ctrl-btn" data-act="NW">↖ Tiến trái</button><button class="ctrl-btn" data-act="NE">↗ Tiến phải</button><button class="ctrl-btn" data-act="SW">↙ Lùi trái</button><button class="ctrl-btn" data-act="SE">↘ Lùi phải</button></div><div id="vector_joystick" aria-label="Giữ kéo để tiến/lùi/ngang/chéo">↖ ↑ ↗<br>← GIỮ / KÉO →<br>↙ ↓ ↘</div>
++<div id="control_status" role="status">Nhận quyền lái · W+A/W+D/S+A/S+D để chạy chéo · nhả để dừng</div>
+             </section>
+ </div>
+         </div>
+@@ -2197,7 +2207,7 @@
+     byId('val_volt').style.color=d.battery<5?'#fb7185':'#cbd5e1';
+     for(const [key,id] of [['F','snr_f'],['B','snr_b'],['L','snr_l'],['R','snr_r']]){
+         const el=byId(id),raw=d.sonar_raw&&d.sonar_raw[key], value=d.sonar[key];
+-        const echo=d.telemetry_valid&&raw!==undefined&&raw!==999&&raw>0;
++        const echo=d.sonar_age_ms!==null&&d.sonar_age_ms<350&&raw!==undefined&&raw>3&&raw<400;
+         el.textContent=!d.telemetry_valid?'—':!echo?'Không có echo':value+' cm';
+         el.style.color=!echo?'#fbbf24':value<=25?'#fb7185':'#4ade80';
+     }
+@@ -2205,6 +2215,8 @@
+     byId('record_state').textContent=currentMap.recording?'● Đang ghi nhật ký cảm biến':currentMap.record_name?'Nhật ký đã dừng':'Chưa ghi nhật ký';
+     byId('record_toggle').textContent=currentMap.recording?'Dừng ghi nhật ký':'Bắt đầu ghi nhật ký';
+     byId('map_note').textContent=valid?'Vị trí do người vận hành xác nhận; chưa theo dõi chuyển động.':p?'Xe đã mất định vị. Dấu đỏ là vị trí cuối đã biết.':currentMap.plan?'Tuyến đã khai báo. Chưa biết vị trí xe trên tuyến.':'Khai báo tuyến để bắt đầu. Chưa có phép đo vị trí.';
++    const vs=d.vector_status,ack=d.vector_ack;
++    byId('vector_feedback').textContent='VECTOR1 · '+(vs?'Pha né '+vs.phase+' · trần PWM '+vs.cap+' · '+(vs.armed?'Né thực nghiệm BẬT':'Né thực nghiệm TẮT'):'Chờ Mega')+(ack?' · ACK '+ack.status:'')+(d.avoid_fault?' · Lỗi né: '+d.avoid_fault:'');
+     renderDrivePresentation(d);
+     if(currentMap.error)mapMessage(currentMap.error,true);
+     drawMap();
+@@ -2334,150 +2346,7 @@
+ };
+ 
+ 
+-// Ordered, latest-intent control stream. Direction changes never wait behind keepalive requests.
+-const controllerId=window.crypto&&crypto.randomUUID?crypto.randomUUID():'web_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
+-let controlSequence=0;
+-let inputOrder=0;
+-let inputTimer=null;
+-let activeFlight=null;
+-let pendingDrive=null;
+-let currentIntent=null;
+-const heldKeys=new Map();
+-const heldPointers=new Map();
+-const KEY_COMMANDS={KeyW:[1,0,0],KeyS:[-1,0,0],KeyA:[0,-1,0],KeyD:[0,1,0],KeyQ:[0,0,-1],KeyE:[0,0,1]};
+-const BUTTON_KEYS={W:'KeyW',B:'KeyS',A:'KeyA',L:'KeyA',D:'KeyD',R:'KeyD',Q:'KeyQ',E:'KeyE'};
+-function commandLabel(vector){return vector[0]===1?'Tiến':vector[0]===-1?'Lùi':vector[1]===-1?'Dạt trái':vector[1]===1?'Dạt phải':vector[2]===-1?'Xoay trái':vector[2]===1?'Xoay phải':'Dừng';}
+-function controlStatus(text,error=false){byId('control_status').textContent=text;byId('control_status').style.color=error?'#fda4af':'#94a3b8';}
+-async function controlFetch(url,options={}){
+-    const v=latestTelemetry&&latestTelemetry.visualization;
+-    const env=v?v.environment:'real',generation=v?v.generation:0;
+-    const sequence=++controlSequence;
+-    url+=(url.includes('?')?'&':'?')+'environment='+encodeURIComponent(env)+'&generation='+generation+'&controller='+encodeURIComponent(controllerId)+'&sequence='+sequence+'&issued_ms='+(lastServerControlTime===null?'':(lastServerControlTime+performance.now()-lastServerControlReceived).toFixed(1));
+-    const controller=options.controller||new AbortController();let timedOut=false;
+-    const timer=setTimeout(()=>{timedOut=true;controller.abort();},500);
+-    const start=performance.now();
+-    try{
+-        const response=await fetch(url,{signal:controller.signal,cache:'no-store',keepalive:Boolean(options.keepalive)});
+-        const result=await response.json();if(!response.ok)throw new Error(result.msg||response.status);
+-        if(result.status!=='ignored_stale')controlStatus((result.status==='simulation'?'Mô phỏng':'Đã gửi USB')+' · '+(options.label||result.command||'Chế độ')+' · '+Math.round(performance.now()-start)+' ms');
+-        return result;
+-    }catch(error){
+-        if(error.name==='AbortError'&&!timedOut)return null; // superseded; server sequence guard still applies
+-        const message=timedOut?'Phản hồi lệnh quá 500 ms; đã ngừng giữ lệnh':error.message;
+-        controlStatus(message,true);mapMessage('Điều khiển: '+message,true);
+-        return {client_error:true,msg:message};
+-    }finally{clearTimeout(timer);}
+-}
+-function discardPendingDrive(){
+-    pendingDrive=null;
+-    if(activeFlight){const old=activeFlight;activeFlight=null;old.controller.abort();}
+-}
+-function clearHeldInputs(){
+-    const had=Boolean(heldKeys.size||heldPointers.size||currentIntent);
+-    heldKeys.clear();heldPointers.clear();currentIntent=null;
+-    if(inputTimer){clearInterval(inputTimer);inputTimer=null;}
+-    pendingDrive=null;
+-    if(!activeFlight||!activeFlight.stop)discardPendingDrive();
+-    paintHeldButtons();return had;
+-}
+-function paintHeldButtons(){
+-    document.querySelectorAll('.ctrl-btn').forEach(button=>button.classList.toggle('held',Boolean(currentIntent&&BUTTON_KEYS[button.dataset.act]===currentIntent.key)));
+-}
+-function strongestIntent(){
+-    const all=[...heldKeys.values(),...heldPointers.values()];
+-    return all.length?all.reduce((a,b)=>a.order>b.order?a:b):null;
+-}
+-function issueDrive(vector,stop=false){
+-    const flight={controller:new AbortController(),vector,stop};activeFlight=flight;
+-    const url='/mecanum_control?drive='+vector[0]+'&strafe='+vector[1]+'&rotate='+vector[2]+(stop?'&estop=1':'');
+-    const task=controlFetch(url,{controller:flight.controller,label:commandLabel(vector),keepalive:stop});
+-    task.then(result=>{
+-        if(activeFlight!==flight)return;
+-        if(result&&result.client_error){
+-            clearHeldInputs();
+-            // One best-effort STOP, never resume stale holds after a network failure.
+-            if(!stop)issueDrive([0,0,0],true);
+-        }
+-    }).finally(()=>{
+-        if(activeFlight!==flight)return;
+-        activeFlight=null;
+-        if(pendingDrive&&currentIntent){const latest=pendingDrive;pendingDrive=null;issueDrive(latest);}
+-    });
+-    return task;
+-}
+-function queueDrive(vector,priority=false){
+-    if(priority){discardPendingDrive();return issueDrive(vector);}
+-    if(activeFlight){pendingDrive=vector;return Promise.resolve(null);}
+-    return issueDrive(vector);
+-}
+-function stopCmd(){clearHeldInputs();discardPendingDrive();return issueDrive([0,0,0],true);}
+-function driveCmd(d,s,r){return queueDrive([d,s,r],true);}
+-function refreshIntent(){
+-    const next=strongestIntent();
+-    const changed=(!next)!==(!currentIntent)||(next&&currentIntent&&next.key!==currentIntent.key);
+-    currentIntent=next;paintHeldButtons();
+-    if(!next){
+-        if(inputTimer){clearInterval(inputTimer);inputTimer=null;}
+-        if(changed)stopCmd();
+-        return;
+-    }
+-    if(changed)queueDrive(KEY_COMMANDS[next.key],true);
+-    if(!inputTimer)inputTimer=setInterval(()=>{if(currentIntent)queueDrive(KEY_COMMANDS[currentIntent.key]);},80);
+-}
+-function editingTarget(target){return target.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);}
+-window.addEventListener('keydown',event=>{
+-    if(editingTarget(event.target))return;
+-    if(event.code==='Space'||event.code==='KeyZ'){event.preventDefault();if(!event.repeat)stopCmd();return;}
+-    if(event.ctrlKey||event.metaKey||event.altKey){if(clearHeldInputs())stopCmd();return;}
+-    if(event.code==='KeyX'){
+-        event.preventDefault();if(event.repeat)return;
+-        clearHeldInputs();controlFetch('/toggle_mode',{label:'Chuyển chế độ'});return;
+-    }
+-    if(!KEY_COMMANDS[event.code])return;
+-    event.preventDefault();
+-    // OS autorepeat must not steal priority from another key that is still held.
+-    if(event.repeat||heldKeys.has(event.code))return;
+-    heldKeys.set(event.code,{key:event.code,order:++inputOrder});refreshIntent();
+-});
+-window.addEventListener('keyup',event=>{
+-    if(!KEY_COMMANDS[event.code])return;
+-    heldKeys.delete(event.code);refreshIntent();
+-});
+-function releasePointer(id){if(heldPointers.delete(id))refreshIntent();}
+-function pointerDirection(event){
+-    const element=document.elementFromPoint(event.clientX,event.clientY);
+-    const button=element&&element.closest('.ctrl-btn');
+-    return button&&BUTTON_KEYS[button.dataset.act];
+-}
+-document.querySelectorAll('.ctrl-btn').forEach(button=>{
+-    const act=button.dataset.act,key=BUTTON_KEYS[act];
+-    if(act==='X'){button.onclick=()=>{clearHeldInputs();controlFetch('/toggle_mode',{label:'Chuyển chế độ'});};return;}
+-    if(act==='Z'||act==='S'){button.onclick=()=>stopCmd();return;}
+-    if(!key)return;
+-    button.addEventListener('pointerdown',event=>{
+-        if(event.pointerType==='mouse'&&event.button!==0)return;
+-        event.preventDefault();
+-        heldPointers.set(event.pointerId,{key,order:++inputOrder});
+-        button.setPointerCapture(event.pointerId);refreshIntent();
+-    });
+-    button.addEventListener('pointermove',event=>{
+-        const previous=heldPointers.get(event.pointerId);if(!previous)return;
+-        const next=pointerDirection(event);
+-        // Crossing a gap between buttons keeps the hold; release anywhere stops it.
+-        if(next&&next!==previous.key){heldPointers.set(event.pointerId,{key:next,order:++inputOrder});refreshIntent();}
+-    });
+-    button.addEventListener('pointerup',event=>releasePointer(event.pointerId));
+-    button.addEventListener('pointercancel',event=>releasePointer(event.pointerId));
+-    button.addEventListener('lostpointercapture',event=>releasePointer(event.pointerId));
+-    button.addEventListener('contextmenu',event=>event.preventDefault());
+-});
+-window.addEventListener('pointerup',event=>releasePointer(event.pointerId));
+-window.addEventListener('pointercancel',event=>releasePointer(event.pointerId));
+-window.addEventListener('blur',()=>stopCmd());
+-window.addEventListener('pagehide',()=>stopCmd());
+-document.addEventListener('visibilitychange',()=>{if(document.hidden)stopCmd();});
+-document.addEventListener('focusin',event=>{if(editingTarget(event.target)&&clearHeldInputs())stopCmd();});
+-
++__VECTOR_CONTROLS__
+ // Move the SAME controls and environment selector; no duplicate command bindings.
+ const mobileQuery=window.matchMedia('(max-width:700px), (max-width:1100px) and (max-height:600px), (pointer:coarse) and (max-width:1100px)');
+ const driveDock=byId('drive_dock');
+@@ -2637,7 +2506,46 @@
+     except Exception: pass
+     finally: serial_lock.release()
+ 
++
++from agv_vector_gateway import Gateway
++gateway = Gateway(globals())
++gateway.install(app)
++serial_worker = gateway.serial_worker
++send_mega = gateway.legacy_command
++simulation_vector = [0.,0.,0.]
++simulation_vector_at = 0.
++
++def auto_or_manual_fresh():
++    return bool(link_ready and motion_feedback and time.monotonic()-motion_feedback['received'] < .3)
++
++def vector_physics_worker():
++    last=time.monotonic()
++    while True:
++        now=time.monotonic();dt=min(.1,max(0.,now-last));last=now
++        with map_lock:
++            v=visual_sessions[driving_environment]
++            if driving_environment=='simulation':
++                cmd=simulation_vector if now-simulation_vector_at<.25 else [0.,0.,0.]
++                integrate_visual(v,cmd[0]*AUTO_LINEAR_MPS,-cmd[1]*AUTO_STRAFE_MPS,-cmd[2]*AUTO_TURN_RADPS,dt)
++                v.update(source='simulation',lost=False,started=v['started'] or any(cmd),moving=any(cmd),speed=math.hypot(cmd[0]*AUTO_LINEAR_MPS,cmd[1]*AUTO_STRAFE_MPS))
++            elif state.get('mode')=='LÁI TAY':
++                v['source']='manual_pwm_estimate'
++                fresh=auto_or_manual_fresh();v['moving']=bool(fresh and any(motion_feedback['wheels']))
++                if v['moving']:v['started']=True
++                if fresh and not v['lost']:
++                    f,left,turn=pwm_velocity(motion_feedback['wheels']);integrate_visual(v,f,left,turn,dt);v['speed']=math.hypot(f,left)
++                else:v['speed']=0.
++        time.sleep(.02)
++physics_worker=vector_physics_worker
++# Apply only to this new variant; preserve the supplied source file untouched.
++from pathlib import Path as _VectorPath
++_controls=(_VectorPath(__file__).parent/'vector_controls.js').read_text(encoding='utf-8')
++HTML_PAGE=HTML_PAGE.replace('__VECTOR_CONTROLS__', 'const AGV_CSRF='+json.dumps(gateway.csrf)+';\n'+_controls)
++HTML_PAGE=HTML_PAGE.replace('<script>', "<script>\nconst originalFetch=window.fetch.bind(window);\nwindow.fetch=(url,options={})=>{\n const same=typeof url==='string'&&(url.startsWith('/')&&!url.startsWith('//'));\n if(same){options={...options,headers:{...(options.headers||{}),'X-AGV-CSRF':__CSRF__,'X-AGV-Lease':ownerLease}};\n if(!url.startsWith('/video_feed')&&!url.startsWith('/telemetry')&&!url.startsWith('/map/export'))url+=(url.includes('?')?'&':'?')+'controller='+encodeURIComponent(controllerId);}\n return originalFetch(url,options);\n};\n".replace('__CSRF__',json.dumps(gateway.csrf)),1)
++
+ if __name__ == '__main__':
++    if not gateway.user or len(gateway.password)<12:
++        raise SystemExit('Đặt AGV_WEB_USER và AGV_WEB_PASSWORD tối thiểu 12 ký tự; không ghi mật khẩu vào code.')
+     import atexit, signal
+     atexit.register(shutdown_stop)
+     def terminate(signum, frame): raise SystemExit(0)

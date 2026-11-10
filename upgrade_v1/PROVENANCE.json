@@ -1,0 +1,15 @@
+{
+  "firmware_source": {
+    "archive_sha256": "37e9e6804731185a690a3a057ef00c3f60a0ee64459ecac12817c0be6ef37806",
+    "member": "agv_mecanum_CUAXOAYNGANG/agv_mecanum_CUAXOAYNGANG.ino",
+    "sha256": "38bdacb061529c72d6bff7b62f23e8799bea17d0b20a547583e0b4eaa2a44e2c"
+  },
+  "jetson_source": {
+    "upload_name": "stream_server_reset_v1.txt",
+    "actual_language": "Python",
+    "sha256": "b2b7a2c94a65ff73fa7da6d506f13f34127edae63f692c238d25765cb7095e68"
+  },
+  "unchanged_motor_line_corner_functions": 13,
+  "line_body_comparison": "identical except obstacle entry guard/delegation",
+  "hardware_tests": "not performed"
+}
