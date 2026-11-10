@@ -7,10 +7,10 @@ Nguồn, hash và phạm vi: PROVENANCE.json. Không có kết nối trực ti�
 | Cú pháp Python | py_compile và grammar Python 3.6 qua | Runtime kiểm thử Python 3.12; chưa chạy Jetson Python 3.6 |
 | Gateway Flask | 12 unit test qua | Serial giả; không có thiết bị thật |
 | Mixer/FSM C++ | Qua với g++17 -Wall -Wextra -Werror | Kiểm thử logic host, không thay cho AVR |
-| Toàn sketch với Arduino stub | Protocol CRC, sai bounds, replay, không cướp phiên, timeout manual/AUTO, reconnect qua | Stub không phải mô phỏng chính xác thời gian/điện |
+| Toàn sketch với Arduino stub | Protocol CRC, sai bounds, replay, không cướp phiên, timeout manual/AUTO, reconnect và thời gian mẫu sau pulseIn qua | Stub không phải mô phỏng chính xác thời gian/điện |
 | Chromium thực, HTTP Flask loopback | 6 mục qua: W+A, đủ 4 chéo, nhả từng phím, reset, hai chủ, joystick ở viewport điện thoại | USB/camera giả; chưa thử màn cảm ứng hoặc WiFi xe thật |
 | ATmega2560 AVR | Build/link ELF và HEX thành công | GCC AVR 5.4.0, avr-libc 2.0, Arduino AVR core 1.8.3 nguyên bản từ Debian; không dùng stub |
-| Bộ nhớ AVR | Flash 25.858 byte (9,9%); static RAM 2.424 byte (29,6%) | Chưa đo stack cực đại/độ trễ thực |
+| Bộ nhớ AVR | Flash 25.866 byte (9,9%); static RAM 2.424 byte (29,6%) | Chưa đo stack cực đại/độ trễ thực |
 | Nạp board | Chưa làm | Chờ quy trình nguồn/backup/thử của người vận hành |
 | Bánh treo/sàn | Chưa làm | Chưa xác minh góc chéo, khoảng hở, servo, tốc độ, A2 và cua thực |
 

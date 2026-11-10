@@ -1746,6 +1746,7 @@ void vectorService(){
     rangeL.cm=distL=readUltrasonicCM(TRIG_LEFT,ECHO_LEFT);rangeL.at=millis();
     rangeR.cm=distR=readUltrasonicCM(TRIG_RIGHT,ECHO_RIGHT);rangeR.at=millis();
     rangeB.cm=distB=readUltrasonicCM(TRIG_BACK,ECHO_BACK);rangeB.at=millis();
+    now=millis(); // pulseIn advanced board time: compare range ages against the updated clock.
     vectorAvoid.choose(rangeL.cm,rangeR.cm,scanLeft,scanRight,now);
    }
   }

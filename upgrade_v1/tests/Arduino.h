@@ -31,7 +31,8 @@ inline int digitalRead(int p){return inputs[p];}
 inline void digitalWrite(int,int){}
 inline int analogRead(int){return 512;}
 inline void analogWrite(int p,int v){pwm[p]=v;}
-inline unsigned long pulseIn(int,int,unsigned long){return 0;}
+inline unsigned long pulseEcho=0;
+inline unsigned long pulseIn(int,int,unsigned long){fakeNow+=pulseEcho/1000;return pulseEcho;}
 inline long map(long x,long a,long b,long c,long d){return (x-a)*(d-c)/(b-a)+c;}
 #define constrain(x,a,b) ((x)<(a)?(a):((x)>(b)?(b):(x)))
 struct MockSerial {

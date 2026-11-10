@@ -24,5 +24,9 @@ int main(){
  command("V1,13,2,D,255,0,0,250");fakeNow=1060;vectorService();assert(!vectorManual);
  Serial.feed("DEF");vectorRead();assert(!vectorManual&&!isLineTrackingMode);
  Serial2.feed("F");vectorRead();for(int w:actualWheels)assert(w==0); // USB owns output
+ // Scanning reads advance millis(): fresh samples must not appear "in the future".
+ fakeNow=1500;hostAt=fakeNow;vectorAvoid.enabled=true;vectorAvoid.cap=80;
+ vectorAvoid.enter(VmAvoid::SCAN_CENTER,1000);scanLeft=scanRight=100;pulseEcho=5882;
+ vectorService();assert(vectorAvoid.phase==VmAvoid::OUT||vectorAvoid.phase==VmAvoid::PASS);
  std::cout<<"Firmware protocol: CRC/replay/bounds/ownership/manual timeout/AUTO watchdog/reconnect OK\n";
 }
