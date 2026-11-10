@@ -27,6 +27,8 @@ class Gateway:
         self.web_sequence={}
         self.owner_lease=""
         self.tickets={}
+        self.link_reason=""
+        self.link_events=[]
 
     def write(self,op,f=0,right=0,rot=0):
         with self.lock:
@@ -35,12 +37,15 @@ class Gateway:
                 return {'status':'error','msg':'Mega VECTOR1 chưa sẵn sàng','sent':False},503
             self.seq+=1
             data=frame(self.sid,self.seq,op,f,right,rot)
-            try:
-                if port.write(data)!=len(data): raise IOError('Short write')
-            except Exception:
-                self.ready=False;self.g['clear_link']('Lỗi ghi VECTOR1');return {'msg':'Lỗi USB','sent':False},503
+            # Register before write: serial RX may observe ACK before write() returns.
             self.pending[self.seq]=(time.monotonic(),op)
             if len(self.pending)>64:self.pending.pop(min(self.pending))
+            try:
+                if port.write(data)!=len(data): raise IOError('Short write')
+            except Exception as exc:
+                self.pending.pop(self.seq,None)
+                self.link_fault('WRITE_ERROR',str(exc))
+                self.ready=False;self.g['clear_link'](self.link_reason);return {'msg':'Lỗi USB','sent':False},503
             if op=='S':self.stopped=True
             if op in ('D','A'):self.stopped=False
             return {'status':'sent','sent':True,'acknowledged':False,'sequence':self.seq,'command':op},200
@@ -61,11 +66,14 @@ class Gateway:
             try:
                 seq,status=line[4:].split(',');seq=int(seq)
             except ValueError:return
-            old=self.pending.pop(seq,None)
-            if old:
-                self.g['state']['vector_ack']={'sequence':seq,'status':status,'op':old[1]}
-                if old[1]=='H' and status=='OK':self.ready=True;self.g['link_ready']=True
-                if status!='OK':self.g['state']['serial_error']='Mega từ chối: '+status
+            with self.lock:
+                old=self.pending.pop(seq,None)
+                if old:
+                    ack={'sequence':seq,'status':status,'op':old[1]}
+                    self.g['state']['vector_ack']=ack
+                    if old[1]=='D':self.g['state']['last_drive_ack']=dict(ack)
+                    if old[1]=='H' and status=='OK':self.ready=True;self.g['link_ready']=True
+                    if status!='OK':self.g['state']['serial_error']='Mega từ chối: '+status
             return
         if line=='AGV:VECTOR1':return
         if line.startswith('VECTOR_STATE:'):
@@ -80,14 +88,25 @@ class Gateway:
         old_sonar=self.g['state'].get('sonar_raw')
         self.g['parse_mega_line'](line)
         current=self.g.get('motion_feedback')
-        if current is not None and current is not old_motion:self.last_motion=current['received']
+        if current is not None and current is not old_motion:
+            self.last_motion=current['received']
+            if any(current['wheels']):
+                self.g['state']['last_nonzero_pwm']={'wheels':list(current['wheels']),'received':current['received']}
         if self.g['state'].get('sonar_raw') is not old_sonar:self.g['state']['sonar_received_monotonic']=now
+
+    def link_fault(self,code,message,details=None):
+        # Persist cause through reconnect; never log credentials, frames, leases or tickets.
+        self.link_reason=message
+        event={'code':code,'message':message,'at_monotonic_ms':round(time.monotonic()*1000), 'details':details or {}}
+        with self.lock:
+            self.link_events.append(event);self.link_events=self.link_events[-8:]
+            self.g['state']['vector_link_events']=list(self.link_events)
 
     def serial_worker(self):
         import glob
         serial=self.g['serial']
         while True:
-            port=None;was_connected=False;self.ready=False;self.g['clear_link']('Chờ Mega VECTOR1; không dùng firmware cũ')
+            port=None;was_connected=False;self.link_reason='';self.ready=False;self.g['clear_link']('Chờ Mega VECTOR1; không dùng firmware cũ')
             try:
                 if serial is None:raise RuntimeError('Cần python3-serial')
                 names=[os.environ['AGV_PORT']] if os.environ.get('AGV_PORT') else sorted(glob.glob('/dev/ttyUSB*')+glob.glob('/dev/ttyACM*'))
@@ -119,7 +138,9 @@ class Gateway:
                         try:self.receive(line)
                         except (ValueError,TypeError,OverflowError):pass
                     self.watchdog()
-            except Exception as exc:self.g['state']['serial_error']=str(exc)
+            except Exception as exc:
+                self.link_fault('SERIAL_EXCEPTION',str(exc))
+                self.g['state']['serial_error']=str(exc)
             finally:
                 with self.lock:
                     self.ready=False
@@ -130,7 +151,7 @@ class Gateway:
                     if port:
                         try:port.write(b'Z');port.close()
                         except Exception:pass
-                    self.g['ser']=None;self.g['clear_link']('VECTOR1 bị ngắt; cần nhận quyền lại')
+                    self.g['ser']=None;self.g['clear_link'](self.link_reason or 'VECTOR1 bị ngắt; cần nhận quyền lại')
             time.sleep(1)
 
     def watchdog(self,now=None):
@@ -146,6 +167,11 @@ class Gateway:
                 if not self.stopped:self.stop()
                 if not alive:self.owner=None
                 if now-self.last_motion>.4 or late_ack:
+                    if late_ack:
+                        pending=[{'op':op,'age_ms':round((now-start)*1000)} for start,op in self.pending.values() if now-start>.4]
+                        self.link_fault('ACK_TIMEOUT','Phần mềm đóng liên kết: quá hạn ACK',{'pending':pending[:8]})
+                    else:
+                        self.link_fault('MOTION_TIMEOUT','Phần mềm đóng liên kết: phản hồi PWM quá cũ',{'age_ms':round((now-self.last_motion)*1000)})
                     self.ready=False;self.owner=None;self.owner_until=0
             elif now-self.last_ping>=.2:
                 self.last_ping=now;self.write('P')
@@ -175,7 +201,7 @@ class Gateway:
                 return Response('Cần đăng nhập AGV',401,{'WWW-Authenticate':'Basic realm="AGV"'})
             if 'viewer' not in session:session['viewer']=secrets.token_urlsafe(20)
             path=request.path
-            mutation=path not in ('/','/telemetry','/video_feed','/map/export')
+            mutation=path not in ('/','/telemetry','/video_feed','/map/export','/control/diagnostics')
             if not mutation:return None
             if not hmac.compare_digest(request.headers.get('X-AGV-CSRF',''),self.csrf):return jsonify(error='Thiếu xác thực thao tác; tải lại trang',msg='CSRF'),403
             who=self.identity()
@@ -204,6 +230,17 @@ class Gateway:
             response.headers['X-Content-Type-Options']='nosniff'
             response.headers['X-Frame-Options']='DENY'
             return response
+        @app.route('/control/diagnostics')
+        def diagnostics():
+            with self.lock:
+                now=time.monotonic();m=self.g.get('motion_feedback')
+                return jsonify(ready=self.ready,port=self.g['state'].get('port'),
+                    motion_age_ms=round((now-m['received'])*1000) if m else None,
+                    current_pwm=m['wheels'] if m else None,
+                    last_drive_ack=self.g['state'].get('last_drive_ack'),
+                    last_nonzero_pwm=self.g['state'].get('last_nonzero_pwm'),
+                    link_events=list(self.link_events),
+                    drawing_lost=self.g.get('visual_sessions',{}).get('real',{}).get('lost'))
         @app.route('/control/claim',methods=['POST'])
         def claim():
             who=self.identity()

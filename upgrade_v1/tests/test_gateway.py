@@ -96,6 +96,30 @@ class Tests(unittest.TestCase):
  def test_phone_clock_does_not_affect_ticket(self):
   self.claim();data=self.vector(1);data['issued_ms']=-1e30
   self.assertEqual(self.req(self.a,'/control/vector',data).status_code,200)
+ def test_ack_before_write_returns_is_retained(self):
+  gateway=self.gateway
+  class ImmediateAckPort:
+   is_open=True
+   def write(self,data):
+    sequence=int(data.decode().split(',')[2]);gateway.receive('ACK:{},OK'.format(sequence));return len(data)
+  self.g['ser']=ImmediateAckPort();result,code=gateway.write('D',255,0,0)
+  self.assertEqual(code,200);self.assertNotIn(result['sequence'],gateway.pending)
+  self.assertEqual(self.g['state']['last_drive_ack']['status'],'OK')
+ def test_write_failure_removes_pending(self):
+  class BadPort:
+   is_open=True
+   def write(self,data):raise IOError('test disconnected')
+  self.g['ser']=BadPort();result,code=self.gateway.write('D',255,0,0)
+  self.assertEqual(code,503);self.assertFalse(self.gateway.pending)
+  self.assertEqual(self.gateway.link_events[-1]['code'],'WRITE_ERROR')
+ def test_diagnostics_read_only_and_private_fields_absent(self):
+  count=len(self.port.data)
+  response=self.a.get('/control/diagnostics',headers={'Authorization':self.auth['Authorization']})
+  self.assertEqual(response.status_code,200);self.assertEqual(count,len(self.port.data))
+  for key in ('password','lease','ticket','sid'):self.assertNotIn(key,response.json)
+ def test_timeout_cause_is_retained(self):
+  self.claim();self.gateway.write('D',255,0,0);self.gateway.watchdog(time.monotonic()+.45)
+  self.assertEqual(self.gateway.link_events[-1]['code'],'ACK_TIMEOUT')
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')
   self.assertEqual(int(crc,16),binascii.crc_hqx(body,0xffff))

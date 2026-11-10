@@ -5,7 +5,7 @@ Nguồn, hash và phạm vi: PROVENANCE.json. Không có kết nối trực ti�
 | Cấp kiểm tra | Kết quả | Giới hạn |
 |---|---|---|
 | Cú pháp Python | py_compile và grammar Python 3.6 qua | Runtime kiểm thử Python 3.12; chưa chạy Jetson Python 3.6 |
-| Gateway Flask | 18 unit test qua | Serial giả; không có thiết bị thật |
+| Gateway Flask | 22 unit test qua | Serial giả; không có thiết bị thật |
 | Mixer/FSM C++ | Qua với g++17 -Wall -Wextra -Werror | Kiểm thử logic host, không thay cho AVR |
 | Toàn sketch với Arduino stub | Protocol CRC, sai bounds, replay, không cướp phiên, timeout manual/AUTO, reconnect và thời gian mẫu sau pulseIn qua | Stub không phải mô phỏng chính xác thời gian/điện |
 | Chromium thực, HTTP Flask loopback | 6 mục qua: W+A, đủ 4 chéo, nhả từng phím, reset, hai chủ, joystick ở viewport điện thoại | USB/camera giả; chưa thử màn cảm ứng hoặc WiFi xe thật |
@@ -51,3 +51,7 @@ Xem SIMULATION_FIX.md. Thêm 3 test quyền khi thiếu USB và hết lease mô 
 ## Hotfix joystick
 
 Xem JOYSTICK_FIX.md: thay issued_ms suy từ telemetry bằng ticket server một lần hạn300 ms. 18 test gateway qua; Chromium cảm ứng có telemetry trễ450 ms tái hiện lỗi cũ và bản mới đi chéo/thả dừng, không lỗi JS. Đây là thử host, chưa thử trực tiếp điện thoại/Jetson.
+
+## Hotfix ACK nhanh
+
+Xem ACK_FIX.md. Bản trước mất ACK nếu ACK tới trước khi write trả về; tái hiện bằng fake serial đồng bộ. Bản mới đăng ký pending trước write và khóa xử lý ACK, không đổi ngưỡng timeout. 22 test gateway qua, diagnostic không ghi USB và không xuất credential/lease/ticket. Chưa thử trực tiếp sửa này trên Jetson.
