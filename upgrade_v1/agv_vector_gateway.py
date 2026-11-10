@@ -86,7 +86,7 @@ class Gateway:
         import glob
         serial=self.g['serial']
         while True:
-            port=None;self.ready=False;self.g['clear_link']('Chờ Mega VECTOR1; không dùng firmware cũ')
+            port=None;was_connected=False;self.ready=False;self.g['clear_link']('Chờ Mega VECTOR1; không dùng firmware cũ')
             try:
                 if serial is None:raise RuntimeError('Cần python3-serial')
                 names=[os.environ['AGV_PORT']] if os.environ.get('AGV_PORT') else sorted(glob.glob('/dev/ttyUSB*')+glob.glob('/dev/ttyACM*'))
@@ -109,6 +109,7 @@ class Gateway:
                 deadline=time.monotonic()+1
                 while not self.ready and time.monotonic()<deadline:self.receive(port.readline(256).decode('ascii',errors='replace').strip())
                 if not self.ready:raise RuntimeError('Mega không xác nhận HELLO')
+                was_connected=True
                 self.stopped=True;self.g['state'].update(port=os.path.basename(names[0]),serial_error='')
                 self.last_motion=time.monotonic()
                 while self.ready:
@@ -120,7 +121,11 @@ class Gateway:
             except Exception as exc:self.g['state']['serial_error']=str(exc)
             finally:
                 with self.lock:
-                    self.ready=False;self.owner=None;self.owner_until=0
+                    self.ready=False
+                    # Failed discovery must not repeatedly revoke a Web lease.
+                    # A real established link loss still revokes real-vehicle control.
+                    if was_connected and self.g['driving_environment']=='real':
+                        self.owner=None;self.owner_until=0
                     if port:
                         try:port.write(b'Z');port.close()
                         except Exception:pass
@@ -131,6 +136,10 @@ class Gateway:
         now=time.monotonic() if now is None else now
         with self.lock:
             alive=self.owner is not None and now<self.owner_until
+            if self.g['driving_environment']=='simulation':
+                if not alive:
+                    self.owner=None;self.g['simulation_vector']=[0.,0.,0.]
+                return
             late_ack=any(now-start>.4 for start,op in self.pending.values())
             if not alive or now-self.last_motion>.4 or late_ack:
                 if not self.stopped:self.stop()

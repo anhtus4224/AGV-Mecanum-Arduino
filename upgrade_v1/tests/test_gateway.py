@@ -68,6 +68,22 @@ class Tests(unittest.TestCase):
   self.req(self.a,'/control/release');self.claim()
   response=self.a.post('/control/vector?controller=browser_123',json=self.vector(50),headers=dict(self.auth,**{'X-AGV-Lease':old}))
   self.assertEqual(response.status_code,409)
+ def test_simulation_lease_survives_missing_usb(self):
+  self.claim();self.g['driving_environment']='simulation';self.gateway.ready=False
+  count=len(self.port.data);owner=self.gateway.owner
+  self.gateway.last_motion=0;self.gateway.watchdog()
+  self.assertEqual(owner,self.gateway.owner);self.assertEqual(count,len(self.port.data))
+ def test_simulation_lease_expiry_clears_motion(self):
+  self.claim();self.g['driving_environment']='simulation';self.g['simulation_vector']=[1,1,0]
+  self.gateway.owner_until=time.monotonic()-1;count=len(self.port.data)
+  self.gateway.watchdog();self.assertIsNone(self.gateway.owner)
+  self.assertEqual(self.g['simulation_vector'],[0.,0.,0.]);self.assertEqual(count,len(self.port.data))
+ def test_failed_discovery_preserves_lease_before_environment_selection(self):
+  from unittest.mock import patch
+  self.claim();owner=self.gateway.owner;self.g['serial']=None
+  with patch('agv_vector_gateway.time.sleep',side_effect=RuntimeError('end fixture loop')):
+   with self.assertRaises(RuntimeError):self.gateway.serial_worker()
+  self.assertEqual(owner,self.gateway.owner);self.assertFalse(self.gateway.ready)
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')
   self.assertEqual(int(crc,16),binascii.crc_hqx(body,0xffff))

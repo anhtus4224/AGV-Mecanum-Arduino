@@ -5,7 +5,7 @@ Nguồn, hash và phạm vi: PROVENANCE.json. Không có kết nối trực ti�
 | Cấp kiểm tra | Kết quả | Giới hạn |
 |---|---|---|
 | Cú pháp Python | py_compile và grammar Python 3.6 qua | Runtime kiểm thử Python 3.12; chưa chạy Jetson Python 3.6 |
-| Gateway Flask | 12 unit test qua | Serial giả; không có thiết bị thật |
+| Gateway Flask | 15 unit test qua | Serial giả; không có thiết bị thật |
 | Mixer/FSM C++ | Qua với g++17 -Wall -Wextra -Werror | Kiểm thử logic host, không thay cho AVR |
 | Toàn sketch với Arduino stub | Protocol CRC, sai bounds, replay, không cướp phiên, timeout manual/AUTO, reconnect và thời gian mẫu sau pulseIn qua | Stub không phải mô phỏng chính xác thời gian/điện |
 | Chromium thực, HTTP Flask loopback | 6 mục qua: W+A, đủ 4 chéo, nhả từng phím, reset, hai chủ, joystick ở viewport điện thoại | USB/camera giả; chưa thử màn cảm ứng hoặc WiFi xe thật |
@@ -43,3 +43,7 @@ python3 tests/build_avr.py /path/to/avr/bin /path/to/arduino/avr /tmp/vector-avr
 Debian Arduino AVR1.8.7 không build được với GCC5.4 do DECIMAL_DIG ở WString; đã dùng core1.8.3 tương thích, không vá core/thay môi trường để che lỗi. Arduino IDE trên PC cần Verify trước khi Upload.
 
 Không xuất ELF/HEX kiểm thử vào gói dùng trên xe; người dùng biên dịch source đúng board/cặp file, kiểm tra và chủ động nạp sau chuẩn bị nguồn.
+
+## Hotfix mô phỏng
+
+Xem SIMULATION_FIX.md. Thêm 3 test quyền khi thiếu USB và hết lease mô phỏng; kiểm tra Chromium với serial_worker thật chạy nền nhưng serial=None, không mở cổng: nhận quyền được giữ qua retry, chọn simulation và W+A làm mô hình chuyển động, không lỗi JavaScript. Firmware giữ nguyên.
