@@ -99,6 +99,20 @@ class Gateway:
             return
         if line.startswith('AVOID_FAULT:'):
             self.g['state']['avoid_fault']=line[12:];return
+        if line.startswith('AVOID_SCAN:'):
+            try:
+                values=list(map(int,line[11:].split(',')))
+                if (len(values)==7 and 0<=values[0]<=0xffffffff
+                        and all(0<=v<=9999 for v in values[1:5])
+                        and 0<=values[5]<=9 and values[6] in (-1,0,1)):
+                    self.g['state']['avoid_scan']={
+                        'board_ms':values[0], 'left_cm':values[1], 'right_cm':values[2],
+                        'diag_left_cm':values[3], 'diag_right_cm':values[4],
+                        'phase_after_choice':values[5], 'chosen_side':values[6],
+                        'received_monotonic_ms':round(now*1000)}
+                    if values[5]==4:self.g['state']['avoid_fault']=None
+            except ValueError:pass
+            return
         if line.startswith('VECTOR_TARGET:'):
             try:
                 values=list(map(int,line[14:].split(',')))
@@ -269,7 +283,7 @@ class Gateway:
                 now=time.monotonic();m=self.g.get('motion_feedback')
                 wheels=m['wheels'] if m else None
                 electrical=[-wheels[0],wheels[1],-wheels[2],wheels[3]] if wheels else None
-                return jsonify(gateway_revision='TOUCH_VECTOR_V2',ready=self.ready,port=self.g['state'].get('port'),
+                return jsonify(gateway_revision='TOUCH_VECTOR_V2_SCAN_DIAG_V1',ready=self.ready,port=self.g['state'].get('port'),
                     motion_age_ms=round((now-m['received'])*1000) if m else None,
                     current_pwm=m['wheels'] if m else None,
                     wheel_order=['FL','FR','RL','RR'],
@@ -277,6 +291,8 @@ class Gateway:
                     firmware_target=self.g['state'].get('firmware_target'),
                     driver_pwm=electrical,driver_pwm_source='derived from MOTION and unchanged drive polarity; not measured pins',
                     avoid_fault=self.g['state'].get('avoid_fault'),
+                    avoid_scan=self.g['state'].get('avoid_scan'),
+                    vector_status=self.g['state'].get('vector_status'),
                     last_drive_ack=self.g['state'].get('last_drive_ack'),
                     last_nonzero_pwm=self.g['state'].get('last_nonzero_pwm'),
                     link_events=list(self.link_events),

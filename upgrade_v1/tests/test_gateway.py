@@ -224,6 +224,27 @@ class Tests(unittest.TestCase):
    data=self.vector(seq);data.update(drive=f,strafe=s,rotate=r)
    self.assertEqual(self.req(self.a,'/control/vector',data).status_code,200)
    self.assertIn((',D,{},{},{},250*'.format(f*255,s*255,r*255)).encode(),self.port.data[-1])
+ def test_avoid_scan_snapshot_survives_fault_without_usb_writes(self):
+  count=len(self.port.data)
+  self.gateway.receive('AVOID_SCAN:1234,71,62,999,999,9,0')
+  self.gateway.receive('AVOID_FAULT:NO_CONFIRMED_CORRIDOR')
+  self.gateway.receive('VECTOR_STATE:0,80,1')
+  d=self.a.get('/control/diagnostics',headers=self.auth).json
+  self.assertEqual(d['avoid_scan']['left_cm'],71)
+  self.assertEqual(d['avoid_scan']['diag_left_cm'],999)
+  self.assertEqual(d['avoid_scan']['phase_after_choice'],9)
+  self.assertEqual(d['avoid_fault'],'NO_CONFIRMED_CORRIDOR')
+  self.assertEqual(d['vector_status'],{'phase':0,'cap':80,'armed':True})
+  self.assertEqual(count,len(self.port.data))
+ def test_malformed_scan_preserves_last_snapshot_and_valid_choice_clears_fault(self):
+  self.gateway.receive('AVOID_SCAN:1234,71,62,999,999,9,0')
+  first=dict(self.g['state']['avoid_scan'])
+  for line in ('AVOID_SCAN:x','AVOID_SCAN:1,2,3','AVOID_SCAN:1,71,62,80,80,4,99'):
+   self.gateway.receive(line);self.assertEqual(self.g['state']['avoid_scan'],first)
+  self.g['state']['avoid_fault']='NO_CONFIRMED_CORRIDOR'
+  self.gateway.receive('AVOID_SCAN:2345,71,62,80,80,4,-1')
+  self.assertIsNone(self.g['state']['avoid_fault'])
+  self.assertEqual(self.g['state']['avoid_scan']['chosen_side'],-1)
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')
   self.assertEqual(int(crc,16),binascii.crc_hqx(body,0xffff))

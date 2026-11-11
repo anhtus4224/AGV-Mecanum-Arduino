@@ -28,5 +28,13 @@ int main(){
  fakeNow=1500;hostAt=fakeNow;vectorAvoid.enabled=true;vectorAvoid.cap=80;
  vectorAvoid.enter(VmAvoid::SCAN_CENTER,1000);scanLeft=scanRight=100;pulseEcho=5882;
  vectorService();assert(vectorAvoid.phase==VmAvoid::OUT||vectorAvoid.phase==VmAvoid::PASS);
+ // 5882 us * .034 / 2 truncates to 99 cm in the existing conversion.
+ assert(Serial.output.find(",99,99,100,100,4,1\n")!=std::string::npos);
+ // Finite side rays do not authorize motion when both diagonal echoes are unknown.
+ fakeNow=2100;hostAt=fakeNow;vectorAvoid.enter(VmAvoid::SCAN_CENTER,1600);
+ scanLeft=scanRight=999;Serial.output.clear();vectorService();
+ assert(Serial.output.find(",99,99,999,999,9,0\n")!=std::string::npos);
+ assert(Serial.output.find("AVOID_FAULT:NO_CONFIRMED_CORRIDOR")!=std::string::npos);
+ assert(vectorAvoid.phase==VmAvoid::OFF);for(int w:actualWheels)assert(w==0);
  std::cout<<"Firmware protocol: CRC/replay/bounds/ownership/manual timeout/AUTO watchdog/reconnect OK\n";
 }

@@ -1749,6 +1749,12 @@ void vectorService(){
     rangeB.cm=distB=readUltrasonicCM(TRIG_BACK,ECHO_BACK);rangeB.at=millis();
     now=millis(); // pulseIn advanced board time: compare range ages against the updated clock.
     vectorAvoid.choose(rangeL.cm,rangeR.cm,scanLeft,scanRight,now);
+    // One snapshot per completed scan; no extra pings or changes to the decision.
+    Serial.print("AVOID_SCAN:");Serial.print(now);
+    Serial.print(',');Serial.print(rangeL.cm);Serial.print(',');Serial.print(rangeR.cm);
+    Serial.print(',');Serial.print(scanLeft);Serial.print(',');Serial.print(scanRight);
+    Serial.print(',');Serial.print((int)vectorAvoid.phase);
+    Serial.print(',');Serial.println(vectorAvoid.phase==VmAvoid::OUT?vectorAvoid.side:0);
    }
   }
  }

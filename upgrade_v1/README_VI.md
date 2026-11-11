@@ -1,3 +1,5 @@
+> Bổ sung chẩn đoán quét: xem [SCAN_DIAGNOSTICS.md](SCAN_DIAGNOSTICS.md). Chưa sửa nguyên nhân NO_CONFIRMED_CORRIDOR trên xe.
+
 # AGV VECTOR1 — bản nâng cấp thử nghiệm, chưa thử trên xe
 
 **Bản sửa 11/11/2026: TOUCH_VECTOR_V2.** Đọc [TOUCH_VECTOR_V2.md](TOUCH_VECTOR_V2.md)
