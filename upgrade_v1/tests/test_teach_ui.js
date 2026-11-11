@@ -35,6 +35,21 @@ const assert=require('assert');const{chromium}=require('playwright');
   assert.equal(await page.evaluate(()=>ownsControl),false);
   const stopped=await page.evaluate(()=>fetch('/control/diagnostics').then(r=>r.json()));
   assert.equal(stopped.teach_return.active,false);assert(stopped.current_pwm.every(x=>x===0));
+  // An invalidated recording must remain explained after Finish; idle renewal
+  // updates the visible status, rather than leaving a stale "Đang ghi" label.
+  await page.locator('#claim_control').click();await page.waitForFunction(()=>ownsControl);
+  await page.locator('#teach_begin').click();await page.waitForFunction(()=>!teachAction&&document.getElementById('teach_status').textContent.includes('Đang ghi'));
+  await page.keyboard.down('w');await page.waitForTimeout(260);await page.keyboard.up('w');await page.waitForTimeout(160);
+  await page.evaluate(()=>window.dispatchEvent(new Event('blur')));await page.waitForTimeout(200);
+  await page.locator('#claim_control').click();await page.waitForFunction(()=>ownsControl);
+  await page.waitForFunction(()=>document.getElementById('teach_status').textContent.includes('nhả quyền'));
+  await page.locator('#teach_finish').click();await page.waitForFunction(()=>!teachAction);
+  assert((await page.locator('#teach_status').textContent()).includes('nhả quyền'));
+  assert(await page.locator('#teach_return').isDisabled());
+  const failedTrace=await page.evaluate(()=>fetch('/control/diagnostics').then(r=>r.json()));
+  assert.equal(failedTrace.teach_return.revision,'TEACH_TRACE_FIX1');
+  assert(failedTrace.teach_return.invalid_reason.includes('nhả quyền'));
+  await page.evaluate(()=>releaseControl());
   assert.deepEqual(errors,[]);
   console.log('PASS: origin, five manual gestures, red trail, stop/finish, 180 + reverse playback, blue trail, manual exclusion, blur cancels; fake USB only');
  }finally{await browser.close();}

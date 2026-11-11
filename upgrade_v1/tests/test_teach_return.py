@@ -22,6 +22,29 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(t.plan[0][1],(0,0,102))
         self.assertEqual([v for dt,v in t.plan[1:] if any(v)],[(255,0,0),(0,255,0),(0,-255,0),(0,255,0),(255,0,0)])
 
+    def test_finish_keeps_the_actual_invalidation_reason(self):
+        for reason in ('Đã nhả quyền trong khi ghi','PWM cap đã đổi trong khi ghi','Chế độ vừa đổi: TỰ HÀNH'):
+            t,now=self.trace();t.recording=True
+            t.invalidate(reason);t.finish(now+.1);t.finish(now+.2)
+            self.assertEqual(t.reason,reason)
+            self.assertEqual(t.snapshot()['invalid_reason'],reason)
+            self.assertFalse(t.valid or t.recording)
+            with self.assertRaisesRegex(ValueError,reason):t.start(now+.3,t.context,200,15.65)
+            self.assertEqual(t.snapshot()['events'][-1]['event'],'FINISH_REJECTED')
+
+    def test_finish_without_begin_explains_the_required_button(self):
+        t=TeachReturn();t.finish(5.)
+        self.assertIn('Chưa bắt đầu ghi',t.reason);self.assertFalse(t.valid)
+        self.assertEqual(t.segments,[])
+
+    def test_new_recording_clears_old_fault_and_bounded_history(self):
+        t,now=self.trace();t.invalidate('old')
+        for i in range(20):t.finish(now+i)
+        self.assertLessEqual(len(t.snapshot()['events']),8)
+        t.begin(now+21,'new',200)
+        self.assertIsNone(t.invalid_reason);self.assertTrue(t.valid and t.recording)
+        self.assertEqual([e['event'] for e in t.events],['BEGIN'])
+
     def test_rotation_sign_is_reversed(self):
         t=TeachReturn();t.begin(0,'ctx',80);t.command(0,(0,0,-255));t.command(.1,(255,0,0));t.command(.2,(0,0,0));t.finish(.2)
         t.start(.3,'ctx',80,1.)

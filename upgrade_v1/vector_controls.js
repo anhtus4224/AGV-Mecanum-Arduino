@@ -8,6 +8,12 @@ let teachReturning=false,teachAction=false;
 let controlSequence=0,ownsControl=false,vectorFlight=false,joystickVector=[0,0,0],joyPointer=null;
 let controlEpoch=0,intentEpoch=0,nextTicket=null,stopFlight=null,releaseFlight=null,claimFlight=false;
 function controlStatus(text,error=false){byId('control_status').textContent=text;byId('control_status').style.color=error?'#fda4af':'#94a3b8';}
+function renderTeachStatus(d){
+ if(!d)return;
+ const text=d.message+' · '+d.segments+' đoạn · '+d.seconds+' giây';
+ if(byId('teach_status').textContent!==text)byId('teach_status').textContent=text;
+ byId('teach_return').disabled=!d.valid||d.recording||d.active;
+}
 function clearHeldInputs(){intentEpoch++;const had=heldKeys.size||heldPointers.size||joystickVector.some(x=>x);heldKeys.clear();heldPointers.clear();joystickVector=[0,0,0];joyPointer=null;return Boolean(had);}
 function intentVector(){
  const keys=new Set([...heldKeys.keys(),...heldPointers.values()]);let v=joystickVector.slice();
@@ -80,7 +86,7 @@ setInterval(async()=>{
    if(epoch===controlEpoch&&ownsControl){
     nextTicket=null;
     if(d.teach_return){
-     byId('teach_status').textContent=d.teach_return.message+' · bước '+d.teach_return.step+'/'+d.teach_return.steps;
+     renderTeachStatus(d.teach_return);
      if(!teachAction)teachReturning=d.teach_return.active;
     }
    }
@@ -90,13 +96,16 @@ setInterval(async()=>{
   if(!nextTicket||!v.some(x=>x)){
    const renewal=await api('/control/renew');
    if(epoch!==controlEpoch||intentStamp!==intentEpoch||!ownsControl||stopFlight)return;
+   renderTeachStatus(renewal.teach_return);
    nextTicket=renewal.ticket;v=intentVector();
    if(!v.some(x=>x)){nextTicket=null;return;}
   }
   if(v.some(x=>x)){
    const ticket=nextTicket;nextTicket=null;
    const result=await transmitVector(v,ticket);
-   if(epoch===controlEpoch&&intentStamp===intentEpoch&&ownsControl&&!stopFlight)nextTicket=result&&result.ticket;
+   if(epoch===controlEpoch&&intentStamp===intentEpoch&&ownsControl&&!stopFlight){
+    nextTicket=result&&result.ticket;renderTeachStatus(result&&result.teach_return);
+   }
   }
  }
  catch(e){if(epoch===controlEpoch&&intentStamp===intentEpoch&&ownsControl){try{await stopCmd();}finally{loseControl(e.message);}}}
@@ -166,7 +175,7 @@ async function teachActionRequest(action){
    turn_seconds:Number(byId('teach_turn_seconds').value),calibrated:byId('teach_calibrated').checked});
   if(epoch!==controlEpoch||!ownsControl){await stopCmd(true);return;}
   teachReturning=result.active;
-  byId('teach_status').textContent=result.message+' · '+result.segments+' đoạn · '+result.seconds+' giây';
+  renderTeachStatus(result);
  }catch(e){await stopCmd(true);controlStatus(e.message,true);byId('teach_status').textContent=e.message;}
  finally{teachAction=false;}
 }

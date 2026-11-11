@@ -4,6 +4,7 @@ No encoder/heading feedback is available: this replays commands, not positions.
 The caller holds its controller lock and supplies a monotonic clock.
 """
 import math
+import time
 
 
 class TeachReturn:
@@ -26,12 +27,19 @@ class TeachReturn:
         self.last_tick = 0.
         self.last_send = 0.
         self.valid = False
+        self.invalid_reason = None
+        self.events = []
 
     def snapshot(self):
-        return dict(recording=self.recording, active=self.active, valid=self.valid,
+        return dict(revision="TEACH_TRACE_FIX1", invalid_reason=self.invalid_reason, events=list(self.events),
+                    recording=self.recording, active=self.active, valid=self.valid,
                     segments=len(self.segments), seconds=round(sum(s[0] for s in self.segments), 3),
                     step=self.index, steps=len(self.plan), cap=self.cap, message=self.reason,
                     method='command_time_estimate', measured=False)
+
+    def event(self, kind, message):
+        self.events.append(dict(event=kind, message=message, at_monotonic_ms=round(time.monotonic()*1000)))
+        self.events=self.events[-8:]
 
     def _append(self, duration, vector):
         if duration <= 0:
@@ -62,6 +70,7 @@ class TeachReturn:
         self.recording = self.valid = True
         self.at = self.last_command = now
         self.reason = 'Đang ghi lệnh lái tay; vệt và khoảng cách là ước lượng'
+        self.event('BEGIN',self.reason)
 
     def command(self, now, vector):
         if not self.recording:
@@ -74,6 +83,11 @@ class TeachReturn:
         if self.recording:
             self._close(now)
         self.recording = False
+        if not self.valid:
+            # finish() must not hide the event that invalidated a partial trace.
+            self.reason = self.invalid_reason or ('Chưa bắt đầu ghi đường; bấm Đặt điểm đầu + ghi đường trước khi lái' if self.cap is None else 'Lượt ghi không hợp lệ; cần ghi đường mới')
+            self.event('FINISH_REJECTED',self.reason)
+            return
         while self.segments and not any(self.segments[-1][1]):
             self.segments.pop()
         while self.segments and not any(self.segments[0][1]):
@@ -81,11 +95,15 @@ class TeachReturn:
         self.current = (0, 0, 0)
         if not self.segments:
             self.valid = False
-        self.reason = 'Đã chốt đường ước lượng' if self.valid else 'Chưa có đường hợp lệ'
+        self.reason = 'Đã chốt đường ước lượng' if self.valid else 'Chưa ghi được đoạn chuyển động nào'
+        self.event('FINISH',self.reason)
 
     def invalidate(self, reason):
+        if self.invalid_reason is None:
+            self.invalid_reason=reason
+        self.event('INVALIDATED',reason)
         self.valid = self.recording = self.active = False
-        self.reason = reason
+        self.reason = self.invalid_reason
         self.current = (0, 0, 0)
 
     def cancel(self, reason):
@@ -95,7 +113,7 @@ class TeachReturn:
 
     def start(self, now, context, cap, turn_seconds):
         if self.recording or not self.valid or not self.segments:
-            raise ValueError('Dừng ghi và chốt một đường hợp lệ trước')
+            raise ValueError(self.invalid_reason or 'Dừng ghi và chốt một đường hợp lệ trước')
         if context != self.context or cap != self.cap:
             raise ValueError('Điểm đầu/môi trường/PWM đã đổi; cần ghi đường mới')
         if type(turn_seconds) not in (int, float) or not math.isfinite(turn_seconds) or not .2 <= turn_seconds <= 30:

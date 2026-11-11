@@ -258,7 +258,12 @@ class Gateway:
             if self.teach.active and (not alive or self.teach.context!=self.teach_context() or self.g['state'].get('mode')!='LÁI TAY' or (self.g['state'].get('vector_status') or {}).get('cap')!=self.teach.cap):
                 self.teach.cancel('Quyền lái/chế độ/phiên vẽ đã đổi');self.stop()
             if self.teach.recording and (not alive or self.teach.context!=self.teach_context() or self.g['state'].get('mode')!='LÁI TAY'):
-                self.teach.invalidate('Phiên vẽ/môi trường đã đổi')
+                if not alive:reason='Hết quyền lái trong khi ghi (không nhận gia hạn trong 0,8 giây)'
+                elif self.teach.context[0]!=self.g['driving_environment']:reason='Đổi môi trường trong khi ghi'
+                elif self.teach.context[1]!=self.g['drive_generation']:reason='Đặt lại phiên vẽ trong khi ghi'
+                elif self.teach.context[2]!=self.owner_lease:reason='Quyền lái được cấp lại trong khi ghi'
+                else:reason='Chế độ vừa đổi: '+str(self.g['state'].get('mode'))
+                self.teach.invalidate(reason)
             if self.g['driving_environment']=='simulation':
                 if not alive:
                     self.owner=None;self.g['simulation_vector']=[0.,0.,0.]
@@ -502,5 +507,7 @@ class Gateway:
                     return jsonify(status='simulation',command='VECTOR',ticket=self.issue_ticket())
                 if self.g['state']['mode']!='LÁI TAY' or not self.g['auto_or_manual_fresh']():return jsonify(msg='Cần LÁI TAY và dữ liệu Mega mới'),409
                 result,code=self.write('D',*[int(round(x*255)) for x in v])
-                if code==200:result['ticket']=self.issue_ticket()
+                if code==200:
+                    result['ticket']=self.issue_ticket()
+                    result['teach_return']=self.teach.snapshot()
                 return jsonify(result),code
