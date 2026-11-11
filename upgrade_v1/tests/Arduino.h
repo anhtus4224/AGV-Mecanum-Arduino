@@ -32,7 +32,19 @@ inline void digitalWrite(int,int){}
 inline int analogRead(int){return 512;}
 inline void analogWrite(int p,int v){pwm[p]=v;}
 inline unsigned long pulseEcho=0;
-inline unsigned long pulseIn(int,int,unsigned long){fakeNow+=pulseEcho/1000;return pulseEcho;}
+inline unsigned long lastPulseTimeout=0;
+inline std::deque<unsigned long> pulseEchoScript;
+inline std::deque<unsigned long> pulseTimeoutHistory;
+inline std::deque<unsigned long> pulseStartHistory;
+inline unsigned long pulseIn(int,int,unsigned long timeout){
+ lastPulseTimeout=timeout;
+ pulseTimeoutHistory.push_back(timeout);
+ pulseStartHistory.push_back(fakeNow);
+ unsigned long value=pulseEcho;
+ if(!pulseEchoScript.empty()){value=pulseEchoScript.front();pulseEchoScript.pop_front();}
+ if(!value||value>=timeout){fakeNow+=timeout/1000;return 0;}
+ fakeNow+=value/1000;return value;
+}
 inline long map(long x,long a,long b,long c,long d){return (x-a)*(d-c)/(b-a)+c;}
 #define constrain(x,a,b) ((x)<(a)?(a):((x)>(b)?(b):(x)))
 struct MockSerial {

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "VectorMotion.h"
+#include "ScanSamples.h"
 #include <stdio.h>
 // AGV_CHUANDET_90_V2
 // Dua truc tiep tren ZIP chuandet.
@@ -212,6 +213,8 @@ uint8_t cornerCenterCount = 0;
 
 // VECTOR1 integration. Old line/corner implementation below is preserved.
 VmAvoid vectorAvoid;
+VmScanSamples scanSamplesLeft,scanSamplesRight;
+uint32_t scanSampleAt=0;
 int actualWheels[4]={0,0,0,0},vectorTarget[4]={0,0,0,0};
 uint32_t vectorTickAt=0,motionAt=0,motionSeq=0,hostAt=0,driveAt=0;
 uint32_t hostSession=0,hostSequence=0,targetSequence=0;bool hostOwned=false,vectorManual=false;
@@ -1719,8 +1722,17 @@ void vectorApply(int f,int s,int rot,int cap){vmMix(f,s,rot,cap,vectorTarget);}
 void vectorBeginAvoidance(){
  stopAllMotors();vectorManual=false;isExecutingAvoidance=true;
  vectorAvoid.start(millis());servoAngle=135;scanLeft=scanRight=999;
+ scanSamplesLeft.reset();scanSamplesRight.reset();scanSampleAt=millis();
  scanSideL=rangeL.valid(millis())?rangeL.cm:999;scanSideR=rangeR.valid(millis())?rangeR.cm:999;
  for(int i=0;i<4;i++)vectorTarget[i]=0;
+}
+long vectorScanCM(){
+ // Stationary scan only: 24 ms can receive echoes out to ~408 cm; choose()
+ // still accepts strictly <400 cm. Normal line/motion sonar stays unchanged.
+ digitalWrite(TRIG_FRONT,LOW);delayMicroseconds(2);
+ digitalWrite(TRIG_FRONT,HIGH);delayMicroseconds(10);digitalWrite(TRIG_FRONT,LOW);
+ unsigned long duration=pulseIn(ECHO_FRONT,HIGH,24000UL);
+ return duration?duration*0.034/2:999;
 }
 void vectorSonar(){
  if(millis()-lastSonarTime<40)return;
@@ -1740,8 +1752,17 @@ void vectorService(){
  if(vectorAvoid.phase>=VmAvoid::SCAN_LEFT&&vectorAvoid.phase<=VmAvoid::SCAN_CENTER){
   if((uint32_t)(now-servoAt)>=20){servoAt=now;digitalWrite(SERVO_PIN,HIGH);delayMicroseconds(map(servoAngle,0,180,600,2400));digitalWrite(SERVO_PIN,LOW);}
   if((uint32_t)(now-vectorAvoid.since)>=440){
-   if(vectorAvoid.phase==VmAvoid::SCAN_LEFT){scanLeft=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);servoAngle=45;vectorAvoid.enter(VmAvoid::SCAN_RIGHT,now);}
-   else if(vectorAvoid.phase==VmAvoid::SCAN_RIGHT){scanRight=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);servoAngle=90;vectorAvoid.enter(VmAvoid::SCAN_CENTER,now);}
+   if(vectorAvoid.phase==VmAvoid::SCAN_LEFT||vectorAvoid.phase==VmAvoid::SCAN_RIGHT){
+    bool left=vectorAvoid.phase==VmAvoid::SCAN_LEFT;
+    VmScanSamples &samples=left?scanSamplesLeft:scanSamplesRight;
+    if(samples.count==0||(uint32_t)(now-scanSampleAt)>=60){
+     samples.add(vectorScanCM());now=millis();scanSampleAt=now;
+     if(samples.done()){
+      if(left){scanLeft=samples.confirmedCm();servoAngle=45;vectorAvoid.enter(VmAvoid::SCAN_RIGHT,now);}
+      else{scanRight=samples.confirmedCm();servoAngle=90;vectorAvoid.enter(VmAvoid::SCAN_CENTER,now);}
+     }
+    }
+   }
    else{
     rangeF.cm=distF=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);rangeF.at=millis();
     rangeL.cm=distL=readUltrasonicCM(TRIG_LEFT,ECHO_LEFT);rangeL.at=millis();
@@ -1749,7 +1770,11 @@ void vectorService(){
     rangeB.cm=distB=readUltrasonicCM(TRIG_BACK,ECHO_BACK);rangeB.at=millis();
     now=millis(); // pulseIn advanced board time: compare range ages against the updated clock.
     vectorAvoid.choose(rangeL.cm,rangeR.cm,scanLeft,scanRight,now);
-    // One snapshot per completed scan; no extra pings or changes to the decision.
+    Serial.print("AVOID_SAMPLES:");Serial.print(now);
+    Serial.print(',');Serial.print((int)scanSamplesLeft.count);Serial.print(',');Serial.print((int)scanSamplesLeft.validCount);
+    Serial.print(',');Serial.print((int)scanSamplesRight.count);Serial.print(',');Serial.print((int)scanSamplesRight.validCount);
+    Serial.println(",24000");
+    // Snapshot of the confirmed samples actually passed to choose().
     Serial.print("AVOID_SCAN:");Serial.print(now);
     Serial.print(',');Serial.print(rangeL.cm);Serial.print(',');Serial.print(rangeR.cm);
     Serial.print(',');Serial.print(scanLeft);Serial.print(',');Serial.print(scanRight);

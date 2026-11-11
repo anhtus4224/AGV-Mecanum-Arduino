@@ -99,6 +99,18 @@ class Gateway:
             return
         if line.startswith('AVOID_FAULT:'):
             self.g['state']['avoid_fault']=line[12:];return
+        if line.startswith('AVOID_SAMPLES:'):
+            try:
+                values=list(map(int,line[14:].split(',')))
+                if (len(values)==6 and 0<=values[0]<=0xffffffff
+                        and 0<=values[2]<=values[1]<=3 and 0<=values[4]<=values[3]<=3
+                        and values[5]==24000):
+                    self.g['state']['avoid_samples']={'board_ms':values[0],
+                        'left_total':values[1],'left_valid':values[2],
+                        'right_total':values[3],'right_valid':values[4],
+                        'stationary_timeout_us':values[5]}
+            except ValueError:pass
+            return
         if line.startswith('AVOID_SCAN:'):
             try:
                 values=list(map(int,line[11:].split(',')))
@@ -283,7 +295,7 @@ class Gateway:
                 now=time.monotonic();m=self.g.get('motion_feedback')
                 wheels=m['wheels'] if m else None
                 electrical=[-wheels[0],wheels[1],-wheels[2],wheels[3]] if wheels else None
-                return jsonify(gateway_revision='TOUCH_VECTOR_V2_SCAN_DIAG_V1',ready=self.ready,port=self.g['state'].get('port'),
+                return jsonify(gateway_revision='AVOID_SCAN_RETRY_V1',ready=self.ready,port=self.g['state'].get('port'),
                     motion_age_ms=round((now-m['received'])*1000) if m else None,
                     current_pwm=m['wheels'] if m else None,
                     wheel_order=['FL','FR','RL','RR'],
@@ -292,6 +304,7 @@ class Gateway:
                     driver_pwm=electrical,driver_pwm_source='derived from MOTION and unchanged drive polarity; not measured pins',
                     avoid_fault=self.g['state'].get('avoid_fault'),
                     avoid_scan=self.g['state'].get('avoid_scan'),
+                    avoid_samples=self.g['state'].get('avoid_samples'),
                     vector_status=self.g['state'].get('vector_status'),
                     last_drive_ack=self.g['state'].get('last_drive_ack'),
                     last_nonzero_pwm=self.g['state'].get('last_nonzero_pwm'),

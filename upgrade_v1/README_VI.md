@@ -1,3 +1,5 @@
+> Sửa cửa sổ đo/lấy mẫu quét: [AVOID_SCAN_RETRY.md](AVOID_SCAN_RETRY.md). Chưa thử xe bản sửa này.
+
 > Bổ sung chẩn đoán quét: xem [SCAN_DIAGNOSTICS.md](SCAN_DIAGNOSTICS.md). Chưa sửa nguyên nhân NO_CONFIRMED_CORRIDOR trên xe.
 
 # AGV VECTOR1 — bản nâng cấp thử nghiệm, chưa thử trên xe

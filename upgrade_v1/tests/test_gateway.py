@@ -245,6 +245,17 @@ class Tests(unittest.TestCase):
   self.gateway.receive('AVOID_SCAN:2345,71,62,80,80,4,-1')
   self.assertIsNone(self.g['state']['avoid_fault'])
   self.assertEqual(self.g['state']['avoid_scan']['chosen_side'],-1)
+ def test_sampling_snapshot_is_bounded_and_read_only(self):
+  count=len(self.port.data)
+  self.gateway.receive('AVOID_SAMPLES:100,3,2,3,0,24000')
+  before=dict(self.g['state']['avoid_samples'])
+  self.gateway.receive('AVOID_SAMPLES:101,3,4,3,0,24000')
+  self.assertEqual(self.g['state']['avoid_samples'],before)
+  d=self.a.get('/control/diagnostics',headers=self.auth).json
+  self.assertEqual(d['avoid_samples']['left_valid'],2)
+  self.assertEqual(d['avoid_samples']['right_valid'],0)
+  self.assertEqual(d['gateway_revision'],'AVOID_SCAN_RETRY_V1')
+  self.assertEqual(count,len(self.port.data))
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')
   self.assertEqual(int(crc,16),binascii.crc_hqx(body,0xffff))
