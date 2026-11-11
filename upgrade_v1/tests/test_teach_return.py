@@ -147,6 +147,14 @@ class IntegrationTests(unittest.TestCase):
         response=self.req(self.a,'/control/teach',{'action':'return','calibrated':False,'turn_seconds':15.65})
         self.assertEqual(response.status_code,400);self.assertEqual(before,len(self.port.data))
 
+    def test_begin_updates_drawing_calibration_without_sending_drive(self):
+        self.prepare();self.gateway.stop();calls=[]
+        self.g['teach_drawing_calibration']=lambda seconds:calls.append(seconds)
+        before=len(self.port.data)
+        response=self.req(self.a,'/control/teach',{'action':'begin','calibrated':True,'turn_seconds':15.65})
+        self.assertEqual(response.status_code,200);self.assertEqual(calls,[15.65])
+        self.assertEqual(before,len(self.port.data));self.assertEqual(self.gateway.teach.cap,200)
+
     def test_stop_cancels_without_restart(self):
         self.prepare();self.assertTrue(self.gateway.teach.active)
         self.gateway.stop();self.assertFalse(self.gateway.teach.active or self.gateway.teach.valid)

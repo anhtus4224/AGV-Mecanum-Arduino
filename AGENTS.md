@@ -2,6 +2,8 @@
 
 ## Triển khai có người vận hành (11/11/2026)
 
+- Ngày12/11 người dùng báo quay về INDOOR_V2 trên sàn rất gần vị trí xuất phát, chỉ vệt vẽ lệch. Giữ nguyên điều khiển đã thử được khi sửa hiển thị; đọc `upgrade_v1/TEACH_MAP_FIX1.md`. Hiệu chuẩn quay80 phải nhập trước khi ghi, vệt là tích phân PWM theo mốc Mega, không phải định vị hoặc polyline được ép trùng.
+
 - Yêu cầu V4: đọc `upgrade_v1/DIRECTIONAL_AVOID_TEACH_V4.md`. Người dùng xác nhận tổng4 sonar, chỉ F trên servo;24 cm là khoảng ngang F→bánh. Né chọn từng phía, không đòi phía đối diện là một hành lang thứ hai; vẫn giữ guard sát thân. Ghi/quay về là thử nghiệm lệnh-thời gian, không có odometry/IMU; cần thời gian180° đã đo, không bịa góc/quãng đường chính xác.
 - Ưu tiên sửa4 file runtime trực tiếp bằng VS Code Remote-SSH/SSH FS rồi khởi động lại launcher, tránh ZIP/chu kỳ nguồn cho sửa Python/JS. Editor local và terminal SSH là hai ngữ cảnh khác nhau. Firmware sửa rồi vẫn phải Upload bằng trình tự nguồn đã chốt. Giữ các nhánh và bản nền trước, không gọi test giả là đã thử xe.
 

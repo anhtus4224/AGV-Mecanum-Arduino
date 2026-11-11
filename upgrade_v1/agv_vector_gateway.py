@@ -462,6 +462,9 @@ class Gateway:
                 cap=profile.get('cap')
                 if cap not in (80,120,160,200,255):return jsonify(msg='Chưa nhận PWM cap từ Mega'),409
                 if action=='begin':
+                    calibrate=self.g.get('teach_drawing_calibration')
+                    if calibrate and body.get('calibrated') is True:
+                        calibrate(body.get('turn_seconds'))
                     self.teach.begin(time.monotonic(),self.teach_context(),cap)
                 elif action=='finish':self.teach.finish(time.monotonic())
                 elif action=='return':

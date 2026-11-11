@@ -920,6 +920,13 @@ def visual_tick(now=None):
                 v['moving']=bool(auto_pwm_fresh(now) and not v.get('geometry_reason') and not v['lost'] and any(motion_feedback['wheels']))
                 v['speed']=math.hypot(*pwm_velocity(motion_feedback['wheels'])[:2]) if v['moving'] else 0.0
                 continue
+            if environment=='real' and 'gateway' in globals():
+                # VECTOR1 has one integration owner: consecutive MOTION frames.
+                # Legacy accepted-command labels must not add a second distance.
+                fresh=bool(motion_feedback and 0<=now-motion_feedback['received']<.3)
+                v['moving']=bool(fresh and not v['lost'] and any(motion_feedback['wheels']))
+                v['speed']=math.hypot(*pwm_velocity(motion_feedback['wheels'])[:2]) if v['moving'] else 0.
+                continue
             command = v['command']
             lease = 0.16 if command in ('Q','E') else 0.25
             age = now-v['command_time']
@@ -958,7 +965,7 @@ def presentation_snapshot():
         if auto:
             v['moving']=bool(feedback_ok and not v.get('geometry_reason') and not v['lost'] and any(motion_feedback['wheels']))
             v['speed']=math.hypot(*pwm_velocity(motion_feedback['wheels'])[:2]) if v['moving'] else 0.0
-        return dict(v, environment=driving_environment, generation=drive_generation, server_instance=visual_server_id, snapshot_monotonic_ms=time.monotonic()*1000, measured=False,
+        return dict(v, drawing_revision='MEGA_TIME_MAP_V1', environment=driving_environment, generation=drive_generation, server_instance=visual_server_id, snapshot_monotonic_ms=time.monotonic()*1000, measured=False,
                     auto_waiting_measurement=auto and not feedback_ok, auto_pwm_estimate=auto and feedback_ok,
                     drawing_settings=dict(drawing_settings),
                     motion_pwm=copy.deepcopy(motion_feedback), accuracy_target_m=1.0, accuracy_verified=False,
@@ -1193,10 +1200,24 @@ def parse_motion_feedback(line, now):
         if driving_environment != 'real' or not link_ready: return
         v = visual_sessions['real']
         if not auto:
+            v['source']='manual_pwm_estimate'
+            v['trace_leg']='return' if gateway.teach.active else 'teach' if gateway.teach.recording else 'manual'
+            if old and not old['auto'] and not fresh:
+                # Do not integrate a missing interval or connect across it.
+                v['segment']+=1
+                v['lost_reason']='Gián đoạn MOTION; ngắt vệt tại khoảng thiếu dữ liệu'
+            anchor_seq=v.pop('_manual_anchor_after_seq',None)
+            anchored=bool(old and anchor_seq==old['seq'])
+            if anchored:v['heading_anchor_gap_ms']=board_delta
+            if fresh and not old['auto'] and not v['lost'] and not anchored:
+                f,left,turn=pwm_velocity(old['wheels'])
+                if gateway.teach.active and gateway.teach.index==0:
+                    turn=-math.pi/gateway.teach.plan[0][0]
+                integrate_visual(v,f,left,turn,board_delta/1000.)
+            v.update(started=v['started'] or any((fl,fr,rl,rr)),
+                     moving=bool(any((fl,fr,rl,rr))),speed=math.hypot(*pwm_velocity((fl,fr,rl,rr))[:2]))
             if v.get('corner_pending'):
                 v.update(corner_pending=None,geometry_reason='Cua bị hủy; cần xác nhận lại điểm đầu',lost=True)
-            if v['source'] == 'auto_pwm_estimate':
-                v.update(moving=False,speed=0.0)
             return
         if v['source'] != 'auto_pwm_estimate':
             # Keep a valid starting anchor; do not fabricate an absolute position.
@@ -1229,10 +1250,12 @@ def parse_motion_feedback(line, now):
 def integrate_visual(v,fwd,left,turn,dt):
     if not v['trail'] or v['trail'][-1]['segment'] != v['segment']:
         v['trail'].append({'x':v['x'],'y':v['y'],'segment':v['segment'],'leg':v.get('trace_leg','manual')})
-    # Midpoint yaw improves curved-path integration without changing motor control.
-    theta = math.radians(v['theta'])+turn*dt/2
-    v['x'] += (fwd*math.cos(theta)-left*math.sin(theta))*dt
-    v['y'] += (fwd*math.sin(theta)+left*math.cos(theta))*dt
+    # Exact constant-body-twist arc, independent of host polling subdivisions.
+    half_angle=turn*dt/2
+    arc=math.sin(half_angle)/half_angle if abs(half_angle)>1e-9 else 1.
+    theta = math.radians(v['theta'])+half_angle
+    v['x'] += (fwd*math.cos(theta)-left*math.sin(theta))*dt*arc
+    v['y'] += (fwd*math.sin(theta)+left*math.cos(theta))*dt*arc
     v['theta'] = (v['theta']+math.degrees(turn*dt)) % 360
     distance = math.hypot(fwd,left)*dt
     v['distance'] += distance
@@ -1987,9 +2010,9 @@ function renderDrivePresentation(d){
     if(sim||(!auto&&v.started&&!v.lost)){
         byId('val_pos').textContent=v.x.toFixed(2)+', '+v.y.toFixed(2)+' m';
         byId('val_deg').textContent=v.theta.toFixed(1)+'°';
-        const source=sim?'MÔ PHỎNG':autoPwm?'ƯỚC LƯỢNG AUTO · PWM bốn bánh':v.frame==='manual_anchor'?'ƯỚC LƯỢNG LỆNH · từ mốc thủ công':'ƯỚC LƯỢNG TƯƠNG ĐỐI · chưa gắn sàn';
+        const source=sim?'MÔ PHỎNG':autoPwm?'ƯỚC LƯỢNG AUTO · PWM bốn bánh':v.source==='manual_pwm_estimate'?'ƯỚC LƯỢNG PWM · thời gian Mega':v.frame==='manual_anchor'?'ƯỚC LƯỢNG LỆNH · từ mốc thủ công':'ƯỚC LƯỢNG TƯƠNG ĐỐI · chưa gắn sàn';
         byId('pos_source').textContent=source;
-        byId('heading_source').textContent=sim?'Hướng mô phỏng':'Hướng ước lượng, chưa đo thực';
+        byId('heading_source').textContent=sim?'Hướng mô phỏng':v.turn_calibration?'Hướng ước lượng · quay180°/'+v.turn_calibration.seconds+'s tại PWM80':'Hướng ước lượng, chưa đo thực';
         byId('nav_quality').textContent=sim?'Mô phỏng':autoPwm?'Ước lượng AUTO':'Ước lượng theo lệnh';
         byId('quality_source').textContent='Không phải tọa độ định vị đo được';
         byId('map_status').textContent=sim?'MÔ PHỎNG':autoPwm?'ƯỚC LƯỢNG AUTO':'ƯỚC LƯỢNG LỆNH';
@@ -2137,7 +2160,7 @@ function drawMap() {
     const v=latestTelemetry&&latestTelemetry.visualization;
     if(v && v.trail.length>1) {
         ctx.save();ctx.strokeStyle='#4dff76';ctx.lineWidth=3.5;ctx.lineJoin='round';ctx.lineCap='round';
-        ctx.shadowColor='#39ff78';ctx.shadowBlur=5;ctx.setLineDash(v.environment==='real'?[8,5]:[]);
+        ctx.shadowBlur=0;ctx.setLineDash(v.environment==='real'?[8,5]:[]);
         let previous=null;
         for(const p of v.trail){
             if(previous&&p.segment===previous.segment){
@@ -2535,10 +2558,27 @@ simulation_vector_at = 0.
 def auto_or_manual_fresh():
     return bool(link_ready and motion_feedback and time.monotonic()-motion_feedback['received'] < .3)
 
+def teach_drawing_calibration(seconds):
+    global AUTO_TURN_RADPS
+    if type(seconds) not in (int,float) or not math.isfinite(seconds) or not .2<=seconds<=30:
+        return False
+    # Timed physical turn at PWM80. This updates only the drawing conversion,
+    # never the replay schedule, cap, servo or serial command values.
+    with map_lock:
+        AUTO_TURN_RADPS=math.pi*255./(80.*seconds)
+        drawing_settings['turn_radps']=AUTO_TURN_RADPS
+        visual_sessions['real']['turn_calibration']=dict(source='timed_180_at_pwm80',seconds=seconds,
+            full_pwm_radps=AUTO_TURN_RADPS,measured_heading=False)
+    return True
+
+
 def teach_heading_anchor(theta):
     # User-calibrated timed turn, still an assumption rather than measured yaw.
     with map_lock:
         visual_sessions['real']['theta']=theta%360
+        # The previous PWM interval began BEFORE this heading anchor. Reusing
+        # that interval afterwards adds the end of the initial turn twice.
+        if motion_feedback:visual_sessions['real']['_manual_anchor_after_seq']=motion_feedback['seq']
 
 
 def vector_physics_worker():
@@ -2556,14 +2596,9 @@ def vector_physics_worker():
                 v['source']='manual_pwm_estimate'
                 fresh=auto_or_manual_fresh();v['moving']=bool(fresh and any(motion_feedback['wheels']))
                 if v['moving']:v['started']=True
-                if fresh and not v['lost']:
-                    f,left,turn=pwm_velocity(motion_feedback['wheels'])
-                    if gateway.teach.active and gateway.teach.index==0:
-                        # Show the timed 180-degree turn using its calibration;
-                        # never present the unrelated drawing gain as measured yaw.
-                        turn=-math.pi/gateway.teach.plan[0][0]
-                    integrate_visual(v,f,left,turn,dt);v['speed']=math.hypot(f,left)
-                else:v['speed']=0.
+                # Real-vehicle pose/trail is integrated exactly once by
+                # parse_motion_feedback(), using consecutive Mega timestamps.
+                v['speed']=math.hypot(*pwm_velocity(motion_feedback['wheels'])[:2]) if fresh and not v['lost'] else 0.
         time.sleep(.02)
 physics_worker=vector_physics_worker
 # Apply only to this new variant; preserve the supplied source file untouched.

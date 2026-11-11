@@ -7,7 +7,8 @@ const assert=require('assert');const{chromium}=require('playwright');
   await page.route('**/video_feed',r=>r.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg"/>'}));
   await page.goto('http://127.0.0.1:18768');await page.waitForFunction(()=>latestTelemetry!==null);
   await page.locator('#claim_control').click();await page.waitForFunction(()=>ownsControl);
-  await page.locator('#teach_turn_seconds').fill('0.3');await page.locator('#teach_calibrated').check();
+  const turnSeconds=process.env.AGV_TEST_TURN_SECONDS||'0.3';
+  await page.locator('#teach_turn_seconds').fill(turnSeconds);await page.locator('#teach_calibrated').check();
   await page.locator('#teach_begin').click();await page.waitForFunction(()=>!teachAction&&document.getElementById('teach_status').textContent.includes('Đang ghi'));
   for(const key of ['w','d','a','d','w']){
    await page.keyboard.down(key);await page.waitForTimeout(260);await page.keyboard.up(key);await page.waitForTimeout(160);
@@ -18,7 +19,7 @@ const assert=require('assert');const{chromium}=require('playwright');
   await page.locator('#teach_return').click();await page.waitForFunction(()=>teachReturning);
   // No manual vectors can interleave with server-driven return.
   await page.keyboard.down('w');await page.waitForTimeout(160);assert.deepEqual(await page.evaluate(()=>intentVector()),[0,0,0]);await page.keyboard.up('w');
-  await page.waitForFunction(()=>!teachReturning&&!teachAction,{},{timeout:10000});
+  await page.waitForFunction(()=>!teachReturning&&!teachAction,{},{timeout:Math.ceil(Number(turnSeconds)*1000)+10000});
   await page.waitForTimeout(1200);
   const result=await page.evaluate(()=>latestTelemetry.teach_return);
   assert(result.message.includes('Đã phát hết'),JSON.stringify(result));
