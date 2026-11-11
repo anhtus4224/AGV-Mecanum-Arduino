@@ -20,12 +20,16 @@ struct VmAvoid {
  enum Phase {OFF,SCAN_LEFT,SCAN_RIGHT,SCAN_CENTER,OUT,PASS,RETURN,CENTER,HANDOFF,FAULT};
  Phase phase=OFF;uint32_t since=0,centerSince=0,lastRange=0;int side=0,closest=400,edgeSamples=0;
  bool enabled=false,seenSide=false;int cap=80;const char *fault="";
+ // Mode 2 permits ONE unknown side only with a confirmed farther diagonal,
+ // a measured opposite side and operator-armed experimental avoidance.
+ uint8_t selectionMode=0,candidateMask=0;
+ bool diagonalProof=false;
  // Commissioning envelope in cm. Measure the COMPLETE protruding body before arming.
  // User measured full wheel envelope 47 cm, length 34 cm including line bar.
  float halfWidth=23.5f;int frontOverhang=17,rearOverhang=17,margin=12;
  void enter(Phase p,uint32_t now){phase=p;since=now;centerSince=0;}
  void fail(const char *reason,uint32_t now){fault=reason;enter(FAULT,now);}
- void start(uint32_t now){seenSide=false;closest=400;edgeSamples=0;lastRange=0;fault="";enter(SCAN_LEFT,now);}
+ void start(uint32_t now){seenSide=false;closest=400;edgeSamples=0;lastRange=0;fault="";selectionMode=candidateMask=0;diagonalProof=false;side=0;enter(SCAN_LEFT,now);}
  bool active()const{return phase!=OFF&&phase!=HANDOFF&&phase!=FAULT;}
  // Scan samples are taken by the non-blocking firmware integration.
  void choose(int left,int right,int diagLeft,int diagRight,uint32_t now){
@@ -33,19 +37,33 @@ struct VmAvoid {
   // Conservative corner envelope. Sensor origins/blind sectors still need measuring;
   // these sparse rays do not prove the entire swept rectangle is unobstructed.
   float diagonal=sqrtf((halfWidth+margin)*(halfWidth+margin)+(frontOverhang+margin)*(frontOverhang+margin));
+  selectionMode=0;diagonalProof=false;
   bool l=left>need&&left<400&&diagLeft>diagonal&&diagLeft<400;
   bool r=right>need&&right<400&&diagRight>diagonal&&diagRight<400;
-  if(!enabled||(!l&&!r)){fail(!enabled?"AVOID_NOT_ARMED":"NO_CONFIRMED_CORRIDOR",now);return;}
-  side=r&&(!l||right>=left)?1:-1;enter(OUT,now);
+  // At a commanded 45-degree scan, require both nominal projections > need.
+  // This is a sparse-ray experimental condition, not proof of a swept free area.
+  float fartherDiagonal=1.414214f*need;
+  bool ld=left==999&&right>halfWidth+margin&&right<400&&diagLeft>fartherDiagonal&&diagLeft<400;
+  bool rd=right==999&&left>halfWidth+margin&&left<400&&diagRight>fartherDiagonal&&diagRight<400;
+  candidateMask=(l?1:0)|(r?2:0)|(ld?4:0)|(rd?8:0);
+  if(!enabled){fail("AVOID_NOT_ARMED",now);return;}
+  if(l||r){selectionMode=1;side=r&&(!l||right>=left)?1:-1;}
+  else if(ld||rd){selectionMode=2;side=rd&&(!ld||diagRight>=diagLeft)?1:-1;}
+  else{fail("NO_CONFIRMED_CORRIDOR",now);return;}
+  int selectedDiag=side>0?diagRight:diagLeft;
+  diagonalProof=selectedDiag>fartherDiagonal&&selectedDiag<400;
+  enter(OUT,now);
  }
  void tick(uint32_t now,VmRange front,VmRange back,VmRange left,VmRange right,bool center,int &f,int &s){
   f=s=0;if(!active()||phase<OUT)return;
   VmRange near=side>0?left:right,outer=side>0?right:left;
   if(!front.valid(now)){fail("SONAR_FRONT_UNKNOWN",now);return;}
   if(!back.valid(now)){fail("SONAR_REAR_UNKNOWN",now);return;}
-  if(!near.valid(now)||!outer.valid(now)){fail("SONAR_SIDE_UNKNOWN",now);return;}
+  if(!near.valid(now)){fail("SONAR_SIDE_UNKNOWN",now);return;}
+  bool diagonalUnknown=diagonalProof&&outer.cm==999&&(uint32_t)(now-outer.at)<350;
+  if(!outer.valid(now)&&!diagonalUnknown){fail("SONAR_SIDE_UNKNOWN",now);return;}
   // Front sensor points forward again before motion. Never use EMA for collision guards.
-  if(front.cm<frontOverhang+margin||outer.cm<halfWidth+margin||near.cm<halfWidth+margin){fail("CLEARANCE",now);return;}
+  if(front.cm<frontOverhang+margin||(outer.valid(now)&&outer.cm<halfWidth+margin)||near.cm<halfWidth+margin){fail("CLEARANCE",now);return;}
   if(back.valid(now)&&back.cm<rearOverhang+margin){fail("REAR_CLEARANCE",now);return;}
   if((uint32_t)(now-since)>10000){fail("PHASE_TIMEOUT",now);return;}
   if(phase==OUT){

@@ -23,8 +23,7 @@ int main(){
  assert(scanLeft==200&&scanRight==999&&scanSamplesLeft.validCount==2);
  assert(Serial.output.find(",71,40,200,999,4,-1\n")!=std::string::npos);
  assert(pulseTimeoutHistory.size()==10);
- for(int i=0;i<6;i++)assert(pulseTimeoutHistory[i]==24000);
- for(int i=6;i<10;i++)assert(pulseTimeoutHistory[i]==8000);
+ for(int i=0;i<10;i++)assert(pulseTimeoutHistory[i]==24000);
  for(int i:{1,2,4,5})assert(pulseStartHistory[i]-pulseStartHistory[i-1]>=60);
  assert(pulseStartHistory[3]-pulseStartHistory[2]>=440);
 

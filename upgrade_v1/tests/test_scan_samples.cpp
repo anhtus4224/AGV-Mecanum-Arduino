@@ -17,5 +17,8 @@ int main(){
  left.reset();left.add(80);left.add(999);left.add(999);assert(left.confirmedCm()==999);
  a.start(300);a.choose(71,41,left.confirmedCm(),right.confirmedCm(),300);
  assert(a.phase==VmAvoid::FAULT);
+ // A below-range numeric echo is not discarded in favor of two far echoes.
+ left.reset();left.add(2);left.add(152);left.add(152);assert(left.confirmedCm()==2);
+ a.start(400);a.choose(999,45,left.confirmedCm(),118,400);assert(a.phase==VmAvoid::FAULT);
  std::cout<<"Scan samples: transient loss, quorum, one-sided choice, close return, all unknown OK\n";
 }

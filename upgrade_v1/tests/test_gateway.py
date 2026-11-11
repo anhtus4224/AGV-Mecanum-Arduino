@@ -254,7 +254,25 @@ class Tests(unittest.TestCase):
   d=self.a.get('/control/diagnostics',headers=self.auth).json
   self.assertEqual(d['avoid_samples']['left_valid'],2)
   self.assertEqual(d['avoid_samples']['right_valid'],0)
-  self.assertEqual(d['gateway_revision'],'AVOID_SCAN_RETRY_V1')
+  self.assertEqual(d['gateway_revision'],'AVOID_DIRECTIONAL_V3')
+  self.assertEqual(count,len(self.port.data))
+ def test_direction_policy_and_full_range_metadata(self):
+  count=len(self.port.data)
+  self.gateway.receive('AVOID_SAMPLES:100,3,3,3,3,24000,24000')
+  self.gateway.receive('AVOID_POLICY:100,2,4,200,1')
+  d=self.a.get('/control/diagnostics',headers=self.auth).json
+  self.assertEqual(d['avoid_policy']['selection_mode'],2)
+  self.assertEqual(d['avoid_policy']['profile_cap'],200)
+  self.assertTrue(d['avoid_policy']['unknown_selected_side_allowed'])
+  self.assertEqual(d['avoid_samples']['fixed_range_timeout_us'],24000)
+  self.gateway.receive('AVOID_POLICY:101,99,4,200,1')
+  self.assertEqual(self.g['state']['avoid_policy']['board_ms'],100)
+  self.assertEqual(count,len(self.port.data))
+ def test_firmware_build_marker_is_reported_without_writing(self):
+  count=len(self.port.data)
+  self.gateway.receive('VECTOR_BUILD:AVOID_DIRECTIONAL_V3')
+  d=self.a.get('/control/diagnostics',headers=self.auth).json
+  self.assertEqual(d['firmware_revision'],'AVOID_DIRECTIONAL_V3')
   self.assertEqual(count,len(self.port.data))
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')

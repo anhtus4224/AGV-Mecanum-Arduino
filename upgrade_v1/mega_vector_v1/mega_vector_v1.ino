@@ -215,6 +215,7 @@ uint8_t cornerCenterCount = 0;
 VmAvoid vectorAvoid;
 VmScanSamples scanSamplesLeft,scanSamplesRight;
 uint32_t scanSampleAt=0;
+uint8_t scanCenterSlot=0;
 int actualWheels[4]={0,0,0,0},vectorTarget[4]={0,0,0,0};
 uint32_t vectorTickAt=0,motionAt=0,motionSeq=0,hostAt=0,driveAt=0;
 uint32_t hostSession=0,hostSequence=0,targetSequence=0;bool hostOwned=false,vectorManual=false;
@@ -324,7 +325,7 @@ void loop() {
   checkModeButton();
   vectorRead();
   vectorService();
-  if (vectorAvoid.phase == VmAvoid::OFF) updateSonar();
+  if (!hostOwned && vectorAvoid.phase == VmAvoid::OFF) updateSonar();
   else vectorSonar();
   vectorMotion();
 
@@ -1647,6 +1648,7 @@ void executeCorridorAvoidanceReference() {
 }
 uint16_t vectorCrc(const char *p){uint16_t c=0xffff;while(*p){c^=(uint8_t)*p++<<8;for(int i=0;i<8;i++)c=c&0x8000?(c<<1)^0x1021:c<<1;}return c;}
 void vectorStop(){
+ scanCenterSlot=0;
  targetSequence=0;
  stopAllMotors();vectorManual=false;vectorAvoid.phase=VmAvoid::OFF;
  isExecutingAvoidance=false;isLineTrackingMode=false;turnState=IDLE_LINE;currentCommand='S';
@@ -1705,7 +1707,10 @@ void vectorRead(){
  // Consume all framed USB as frames. Never pass their letters to legacy parsing.
  int budget=96;
  while(Serial.available()&&budget--){char c=Serial.read();
-  if(c=='?'){if(!frameActive)Serial.println("AGV:VECTOR1");continue;}
+  if(c=='?'){
+   if(!frameActive){Serial.println("AGV:VECTOR1");Serial.println("VECTOR_BUILD:AVOID_DIRECTIONAL_V3");}
+   continue;
+  }
   if(c=='@'){frameActive=true;frameOverflow=false;frameLength=0;continue;}
   if(frameActive){
    if(c=='\n'){if(!frameOverflow){frameBuffer[frameLength]=0;vectorFrame();}frameActive=false;}
@@ -1722,28 +1727,37 @@ void vectorApply(int f,int s,int rot,int cap){vmMix(f,s,rot,cap,vectorTarget);}
 void vectorBeginAvoidance(){
  stopAllMotors();vectorManual=false;isExecutingAvoidance=true;
  vectorAvoid.start(millis());servoAngle=135;scanLeft=scanRight=999;
- scanSamplesLeft.reset();scanSamplesRight.reset();scanSampleAt=millis();
+ scanSamplesLeft.reset();scanSamplesRight.reset();scanSampleAt=millis();scanCenterSlot=0;
  scanSideL=rangeL.valid(millis())?rangeL.cm:999;scanSideR=rangeR.valid(millis())?rangeR.cm:999;
  for(int i=0;i<4;i++)vectorTarget[i]=0;
 }
-long vectorScanCM(){
- // Stationary scan only: 24 ms can receive echoes out to ~408 cm; choose()
- // still accepts strictly <400 cm. Normal line/motion sonar stays unchanged.
- digitalWrite(TRIG_FRONT,LOW);delayMicroseconds(2);
- digitalWrite(TRIG_FRONT,HIGH);delayMicroseconds(10);digitalWrite(TRIG_FRONT,LOW);
- unsigned long duration=pulseIn(ECHO_FRONT,HIGH,24000UL);
+long vectorReadRangeCM(int trig,int echo){
+ // Consistent 24 ms range for every VECTOR1 ray; unknown is still 999.
+ // The legacy readUltrasonicCM() remains unchanged for non-USB operation.
+ digitalWrite(trig,LOW);delayMicroseconds(2);
+ digitalWrite(trig,HIGH);delayMicroseconds(10);digitalWrite(trig,LOW);
+ unsigned long duration=pulseIn(echo,HIGH,24000UL);
+ lastSonarTime=millis();
  return duration?duration*0.034/2:999;
 }
-void vectorSonar(){
- if(millis()-lastSonarTime<40)return;
- lastSonarTime=millis();
- if(vectorAvoid.phase<VmAvoid::OUT)return;
- switch(sonarSlot++%4){
-  case 0:rangeF.cm=distF=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);rangeF.at=millis();break;
-  case 1:rangeL.cm=distL=readUltrasonicCM(TRIG_LEFT,ECHO_LEFT);rangeL.at=millis();break;
-  case 2:rangeR.cm=distR=readUltrasonicCM(TRIG_RIGHT,ECHO_RIGHT);rangeR.at=millis();break;
-  case 3:rangeB.cm=distB=readUltrasonicCM(TRIG_BACK,ECHO_BACK);rangeB.at=millis();break;
+long vectorScanCM(){return vectorReadRangeCM(TRIG_FRONT,ECHO_FRONT);}
+void vectorSampleRange(uint8_t slot){
+ switch(slot){
+  case 0:
+   rangeF.cm=distF=vectorReadRangeCM(TRIG_FRONT,ECHO_FRONT);rangeF.at=millis();
+   if(distF>3&&distF<=OBSTACLE_CM){if(frontHits<100)frontHits++;}else frontHits=0;
+   break;
+  case 1:rangeL.cm=distL=vectorReadRangeCM(TRIG_LEFT,ECHO_LEFT);rangeL.at=millis();break;
+  case 2:rangeR.cm=distR=vectorReadRangeCM(TRIG_RIGHT,ECHO_RIGHT);rangeR.at=millis();break;
+  case 3:rangeB.cm=distB=vectorReadRangeCM(TRIG_BACK,ECHO_BACK);rangeB.at=millis();break;
  }
+}
+void vectorSonar(){
+ if(vectorAvoid.phase>=VmAvoid::SCAN_LEFT&&vectorAvoid.phase<=VmAvoid::SCAN_CENTER)return;
+ if((uint32_t)(millis()-lastSonarTime)<40)return;
+ uint8_t slot=(uint8_t)sonarSlot&3;
+ sonarSlot=(slot+1)&3; // Keep the AVR int bounded during long USB sessions.
+ vectorSampleRange(slot);
 }
 void vectorService(){
  uint32_t now=millis();
@@ -1759,27 +1773,30 @@ void vectorService(){
      samples.add(vectorScanCM());now=millis();scanSampleAt=now;
      if(samples.done()){
       if(left){scanLeft=samples.confirmedCm();servoAngle=45;vectorAvoid.enter(VmAvoid::SCAN_RIGHT,now);}
-      else{scanRight=samples.confirmedCm();servoAngle=90;vectorAvoid.enter(VmAvoid::SCAN_CENTER,now);}
+      else{scanRight=samples.confirmedCm();servoAngle=90;scanCenterSlot=0;vectorAvoid.enter(VmAvoid::SCAN_CENTER,now);}
      }
     }
    }
    else{
-    rangeF.cm=distF=readUltrasonicCM(TRIG_FRONT,ECHO_FRONT);rangeF.at=millis();
-    rangeL.cm=distL=readUltrasonicCM(TRIG_LEFT,ECHO_LEFT);rangeL.at=millis();
-    rangeR.cm=distR=readUltrasonicCM(TRIG_RIGHT,ECHO_RIGHT);rangeR.at=millis();
-    rangeB.cm=distB=readUltrasonicCM(TRIG_BACK,ECHO_BACK);rangeB.at=millis();
-    now=millis(); // pulseIn advanced board time: compare range ages against the updated clock.
+    // Refresh one fixed ray per turn, not four blocking reads in one turn.
+    if((uint32_t)(now-lastSonarTime)<40)return;
+    vectorSampleRange(scanCenterSlot++);now=millis();
+    if(scanCenterSlot<4)return;
     vectorAvoid.choose(rangeL.cm,rangeR.cm,scanLeft,scanRight,now);
+    Serial.print("AVOID_POLICY:");Serial.print(now);Serial.print(',');Serial.print((int)vectorAvoid.selectionMode);
+    Serial.print(',');Serial.print((int)vectorAvoid.candidateMask);Serial.print(',');Serial.print(vectorAvoid.cap);
+    Serial.print(',');Serial.println(vectorAvoid.diagonalProof?1:0);
     Serial.print("AVOID_SAMPLES:");Serial.print(now);
     Serial.print(',');Serial.print((int)scanSamplesLeft.count);Serial.print(',');Serial.print((int)scanSamplesLeft.validCount);
     Serial.print(',');Serial.print((int)scanSamplesRight.count);Serial.print(',');Serial.print((int)scanSamplesRight.validCount);
-    Serial.println(",24000");
+    Serial.println(",24000,24000");
     // Snapshot of the confirmed samples actually passed to choose().
     Serial.print("AVOID_SCAN:");Serial.print(now);
     Serial.print(',');Serial.print(rangeL.cm);Serial.print(',');Serial.print(rangeR.cm);
     Serial.print(',');Serial.print(scanLeft);Serial.print(',');Serial.print(scanRight);
     Serial.print(',');Serial.print((int)vectorAvoid.phase);
     Serial.print(',');Serial.println(vectorAvoid.phase==VmAvoid::OUT?vectorAvoid.side:0);
+    lastSonarTime=millis(); // Keep the outer loop from immediately pinging again.
    }
   }
  }

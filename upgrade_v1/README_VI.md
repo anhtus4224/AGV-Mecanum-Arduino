@@ -1,3 +1,5 @@
+> Bản mới theo yêu cầu chọn hướng khi sonar bên không echo: [DIRECTIONAL_AVOID_V3.md](DIRECTIONAL_AVOID_V3.md). Mặc định80/né tắt; chưa thử xe bản V3.
+
 > Sửa cửa sổ đo/lấy mẫu quét: [AVOID_SCAN_RETRY.md](AVOID_SCAN_RETRY.md). Chưa thử xe bản sửa này.
 
 > Bổ sung chẩn đoán quét: xem [SCAN_DIAGNOSTICS.md](SCAN_DIAGNOSTICS.md). Chưa sửa nguyên nhân NO_CONFIRMED_CORRIDOR trên xe.

@@ -2,6 +2,7 @@
 
 ## Triển khai có người vận hành (11/11/2026)
 
+- Cập nhật yêu cầu né mới: đọc `upgrade_v1/DIRECTIONAL_AVOID_V3.md`. Người dùng yêu cầu xét hướng có sonar bên không echo khi quét chéo đã xác nhận; hỗ trợ các cap chủ động80/120/160/200/255, mặc định80/né tắt. Không diễn giải999 thành khoảng cách giả hoặc bằng chứng độc lập về an toàn; phân biệt test phần mềm với thử xe và giữ các guard còn lại.
 - Dùng hướng dẫn `docs/TRIEN_KHAI_TOUCH_VECTOR_V2.md` cho gói dc1092c62572b3ec2ac7c13fde3014ec392b23e0 và ngữ cảnh bàn giao hiện tại.
 - Trong chat triển khai: một bước nhỏ mỗi lần, ghi rõ terminal PC/Jetson và chỗ bấm, đợi kết quả/ảnh sau bước quan trọng. Xem dấu nhắc để xác nhận SSH; không coi tên tab JETSON là bằng chứng. Không yêu cầu chạy lại bước đã xác nhận xong.
 - Xác minh trạng thái nguồn và xe kê chắc trước hướng dẫn bật/chạy; công tắc tổng cấp cả Jetson/Mega/motor. Áp dụng trình tự shutdown trong hướng dẫn, không tự đổi dây hoặc suy ra nguồn motor đã cách ly. Không yêu cầu bí mật trong chat.

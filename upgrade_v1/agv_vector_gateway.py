@@ -91,6 +91,8 @@ class Gateway:
                     if status!='OK':self.g['state']['serial_error']='Mega từ chối: '+status
             return
         if line=='AGV:VECTOR1':return
+        if line=='VECTOR_BUILD:AVOID_DIRECTIONAL_V3':
+            self.g['state']['firmware_revision']='AVOID_DIRECTIONAL_V3';return
         if line.startswith('VECTOR_STATE:'):
             try:
                 phase,cap,armed=map(int,line[13:].split(','))
@@ -99,16 +101,29 @@ class Gateway:
             return
         if line.startswith('AVOID_FAULT:'):
             self.g['state']['avoid_fault']=line[12:];return
+        if line.startswith('AVOID_POLICY:'):
+            try:
+                values=list(map(int,line[13:].split(',')))
+                if (len(values) in (4,5) and 0<=values[0]<=0xffffffff
+                        and values[1] in (0,1,2) and 0<=values[2]<=15 and 40<=values[3]<=255
+                        and (len(values)==4 or values[4] in (0,1))):
+                    self.g['state']['avoid_policy']={'board_ms':values[0],
+                        'selection_mode':values[1], 'candidate_mask':values[2],
+                        'profile_cap':values[3],
+                        'unknown_selected_side_allowed':bool(values[4]) if len(values)==5 else None}
+            except ValueError:pass
+            return
         if line.startswith('AVOID_SAMPLES:'):
             try:
                 values=list(map(int,line[14:].split(',')))
-                if (len(values)==6 and 0<=values[0]<=0xffffffff
+                if (len(values) in (6,7) and 0<=values[0]<=0xffffffff
                         and 0<=values[2]<=values[1]<=3 and 0<=values[4]<=values[3]<=3
-                        and values[5]==24000):
+                        and values[5]==24000 and (len(values)==6 or values[6]==24000)):
                     self.g['state']['avoid_samples']={'board_ms':values[0],
                         'left_total':values[1],'left_valid':values[2],
                         'right_total':values[3],'right_valid':values[4],
-                        'stationary_timeout_us':values[5]}
+                        'stationary_timeout_us':values[5],
+                        'fixed_range_timeout_us':values[6] if len(values)==7 else None}
             except ValueError:pass
             return
         if line.startswith('AVOID_SCAN:'):
@@ -156,6 +171,7 @@ class Gateway:
         serial=self.g['serial']
         while True:
             port=None;was_connected=False;self.link_reason='';self.ready=False;self.g['clear_link']('Chờ Mega VECTOR1; không dùng firmware cũ')
+            self.g['state'].pop('firmware_revision',None)
             try:
                 if serial is None:raise RuntimeError('Cần python3-serial')
                 names=[os.environ['AGV_PORT']] if os.environ.get('AGV_PORT') else sorted(glob.glob('/dev/ttyUSB*')+glob.glob('/dev/ttyACM*'))
@@ -295,7 +311,8 @@ class Gateway:
                 now=time.monotonic();m=self.g.get('motion_feedback')
                 wheels=m['wheels'] if m else None
                 electrical=[-wheels[0],wheels[1],-wheels[2],wheels[3]] if wheels else None
-                return jsonify(gateway_revision='AVOID_SCAN_RETRY_V1',ready=self.ready,port=self.g['state'].get('port'),
+                return jsonify(gateway_revision='AVOID_DIRECTIONAL_V3',ready=self.ready,port=self.g['state'].get('port'),
+                    firmware_revision=self.g['state'].get('firmware_revision'),
                     motion_age_ms=round((now-m['received'])*1000) if m else None,
                     current_pwm=m['wheels'] if m else None,
                     wheel_order=['FL','FR','RL','RR'],
@@ -305,6 +322,7 @@ class Gateway:
                     avoid_fault=self.g['state'].get('avoid_fault'),
                     avoid_scan=self.g['state'].get('avoid_scan'),
                     avoid_samples=self.g['state'].get('avoid_samples'),
+                    avoid_policy=self.g['state'].get('avoid_policy'),
                     vector_status=self.g['state'].get('vector_status'),
                     last_drive_ack=self.g['state'].get('last_drive_ack'),
                     last_nonzero_pwm=self.g['state'].get('last_nonzero_pwm'),
