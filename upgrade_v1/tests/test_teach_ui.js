@@ -47,7 +47,7 @@ const assert=require('assert');const{chromium}=require('playwright');
   assert((await page.locator('#teach_status').textContent()).includes('nhả quyền'));
   assert(await page.locator('#teach_return').isDisabled());
   const failedTrace=await page.evaluate(()=>fetch('/control/diagnostics').then(r=>r.json()));
-  assert.equal(failedTrace.teach_return.revision,'TEACH_TRACE_FIX1');
+  assert.equal(failedTrace.teach_return.revision,'TEACH_RETURN_INDOOR_V2');
   assert(failedTrace.teach_return.invalid_reason.includes('nhả quyền'));
   await page.evaluate(()=>releaseControl());
   assert.deepEqual(errors,[]);

@@ -289,8 +289,11 @@ class Gateway:
                     if vector is not None:
                         ranges=self.g['state'].get('vector_range') or {}
                         age=now-ranges.get('received',-1e9)
-                        problem=clearance_problem(vector,ranges.get('raw',{}),age,ranges.get('ages_ms',{}))
+                        problem=clearance_problem(vector,ranges.get('raw',{}),age,ranges.get('ages_ms',{}),allow_unknown_turn=self.teach.turn_space_confirmed)
                         if problem:
+                            self.teach.last_guard={'step':self.teach.index,'vector_pwm':list(vector),
+                                'raw':dict(ranges.get('raw',{})),'ray_ages_ms':dict(ranges.get('ages_ms',{})),
+                                'packet_age_ms':round(age*1000),'reason':problem}
                             self.teach.cancel(problem);self.stop()
                         elif self.teach.active:self.write('D',*vector)
                         else:self.stop()
@@ -466,7 +469,7 @@ class Gateway:
                         return jsonify(msg='Cần đo thời gian quay 180° tại PWM 80 và xác nhận trước'),400
                     if self.g['state'].get('firmware_revision')!='AVOID_DIRECTIONAL_V4':
                         return jsonify(msg='Cần firmware V4 cho phản hồi và gác an toàn cùng phiên bản'),409
-                    try:self.teach.start(time.monotonic(),self.teach_context(),cap,body.get('turn_seconds'))
+                    try:self.teach.start(time.monotonic(),self.teach_context(),cap,body.get('turn_seconds'),turn_space_confirmed=True)
                     except ValueError as exc:return jsonify(msg=str(exc)),400
                     with self.g.get('map_lock',self.lock):
                         self.return_start_heading=self.g.get('visual_sessions',{}).get('real',{}).get('theta')

@@ -24,6 +24,7 @@ def sensor_loop():
    seq+=1;now=time.monotonic();m.rx_time=m.data_time=m.mode_time=now;m.gateway.last_motion=now;m.gateway.pending.clear()
    m.motion_feedback=dict(seq=seq,board_ms=int(now*1000),wheels=list(p.wheels),auto=False,corner=0,avoid=False,received=now)
    m.state.update(action='MOVE' if any(p.wheels) else 'STOP',sonar_raw={'F':100,'B':100,'L':100,'R':100},sonar_received_monotonic=now)
+   if os.environ.get('AGV_TEST_RETURN_UNKNOWN')=='1':m.state['sonar_raw']={'F':999,'B':66,'L':125,'R':73}
    m.state['vector_range']={'raw':dict(m.state['sonar_raw']),'ages_ms':dict.fromkeys('FBLR',0),'received':now}
    m.gateway.watchdog(now)
   time.sleep(.02)

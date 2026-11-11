@@ -70,6 +70,26 @@ class EngineTests(unittest.TestCase):
         t=TeachReturn();t.begin(0,'ctx',80);t.command(601,(255,0,0));self.assertFalse(t.valid)
         t,now=self.trace();t.start(now,t.context,200,1.);t.cancel('STOP');self.assertFalse(t.active or t.valid)
 
+    def test_indoor_thresholds_unknown_turn_confirmation_and_ray_ages(self):
+        raw={'F':999,'B':66,'L':125,'R':73};ages=dict.fromkeys('FBLR',10)
+        # Reproduce the screenshot: F999 used to stop the initial turn.
+        self.assertIsNotNone(clearance_problem((0,0,80),raw,.05,ages))
+        self.assertIsNone(clearance_problem((0,0,80),raw,.05,ages,allow_unknown_turn=True))
+        for side,limit in [('F',20),('B',20),('L',14),('R',14)]:
+            r=dict.fromkeys('FBLR',100);r[side]=limit
+            self.assertIsNotNone(clearance_problem((0,0,80),r,.05,ages,allow_unknown_turn=True))
+            r[side]=limit+1
+            self.assertIsNone(clearance_problem((0,0,-80),r,.05,ages,allow_unknown_turn=True))
+            for bad in (0,1,3,400,998):
+                r[side]=bad
+                self.assertIsNotNone(clearance_problem((0,0,80),r,.05,ages,allow_unknown_turn=True))
+            r[side]=999;a=dict(ages);a[side]=350
+            self.assertIsNotNone(clearance_problem((0,0,80),r,.01,a,allow_unknown_turn=True))
+        r=dict.fromkeys('FBLR',999)
+        self.assertIsNone(clearance_problem((0,0,80),r,.05,ages,allow_unknown_turn=True))
+        r['F']=10;self.assertIsNotNone(clearance_problem((255,0,0),r,.05,ages))
+        r['F']=11;self.assertIsNone(clearance_problem((255,0,0),r,.05,ages))
+
     def test_directional_collision_and_turn_guards(self):
         raw={'F':100,'B':100,'L':999,'R':8}
         self.assertIsNone(clearance_problem((255,-255,0),raw,.1))
@@ -107,6 +127,25 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(self.req(self.a,'/control/vector',self.vector(5)).status_code,409)
         self.assertEqual(len(self.port.data),before)
         self.assertEqual(self.req(self.b,'/control/teach',{'action':'return','calibrated':True,'turn_seconds':1}).status_code,409)
+
+    def test_confirmed_turn_accepts_f999_then_measured_close_still_stops(self):
+        self.prepare();self.assertTrue(self.gateway.teach.turn_space_confirmed)
+        self.g['state']['sonar_raw']['F']=999
+        now=time.monotonic();self.gateway.watchdog(now)
+        self.assertTrue(self.gateway.teach.active)
+        self.g['state']['sonar_raw']['R']=14
+        self.gateway.watchdog(now+.09)
+        self.assertFalse(self.gateway.teach.active)
+        self.assertEqual(self.gateway.teach.last_guard['raw']['F'],999)
+        self.assertEqual(self.gateway.teach.last_guard['raw']['R'],14)
+        self.assertEqual(self.gateway.teach.last_guard['step'],0)
+        self.assertIn(b',S,',self.port.data[-1])
+
+    def test_unconfirmed_api_turn_sends_no_motion(self):
+        self.prepare();self.gateway.stop();self.gateway.teach.valid=True
+        before=len(self.port.data)
+        response=self.req(self.a,'/control/teach',{'action':'return','calibrated':False,'turn_seconds':15.65})
+        self.assertEqual(response.status_code,400);self.assertEqual(before,len(self.port.data))
 
     def test_stop_cancels_without_restart(self):
         self.prepare();self.assertTrue(self.gateway.teach.active)

@@ -7,6 +7,12 @@ import math
 import time
 
 
+TRANSLATION_CLEARANCE_CM = 10
+# Body 47 x 34 cm: corner radius ~29 cm. Extra swept reach at an
+# edge-mounted head is ~12 cm F/B, ~5.5 cm L/R; add ~8 cm margin.
+TURN_CLEARANCE_CM = {'F':20, 'B':20, 'L':14, 'R':14}
+
+
 class TeachReturn:
     MAX_SECONDS = 600.
     MAX_SEGMENTS = 6000
@@ -29,9 +35,11 @@ class TeachReturn:
         self.valid = False
         self.invalid_reason = None
         self.events = []
+        self.turn_space_confirmed = False
+        self.last_guard = None
 
     def snapshot(self):
-        return dict(revision="TEACH_TRACE_FIX1", invalid_reason=self.invalid_reason, events=list(self.events),
+        return dict(revision="TEACH_RETURN_INDOOR_V2", guard_policy=dict(translation_cm=TRANSLATION_CLEARANCE_CM, turn_cm=dict(TURN_CLEARANCE_CM), unknown_turn_allowed=self.turn_space_confirmed), last_guard=self.last_guard, invalid_reason=self.invalid_reason, events=list(self.events),
                     recording=self.recording, active=self.active, valid=self.valid,
                     segments=len(self.segments), seconds=round(sum(s[0] for s in self.segments), 3),
                     step=self.index, steps=len(self.plan), cap=self.cap, message=self.reason,
@@ -111,7 +119,7 @@ class TeachReturn:
         if self.active:
             self.invalidate(reason + '; cần đưa xe về điểm cuối hoặc ghi đường mới')
 
-    def start(self, now, context, cap, turn_seconds):
+    def start(self, now, context, cap, turn_seconds, turn_space_confirmed=False):
         if self.recording or not self.valid or not self.segments:
             raise ValueError(self.invalid_reason or 'Dừng ghi và chốt một đường hợp lệ trước')
         if context != self.context or cap != self.cap:
@@ -124,6 +132,8 @@ class TeachReturn:
         # Rotating the BODY frame by pi preserves translation signs when time
         # is reversed; angular velocity changes sign. Do not negate strafe.
         self.plan += [(dt, (f, s, -r)) for dt, (f, s, r) in reversed(self.segments)]
+        self.turn_space_confirmed = turn_space_confirmed is True
+        self.last_guard = None
         self.active = True
         self.index = 0
         self.deadline = now + self.plan[0][0]
@@ -153,12 +163,12 @@ class TeachReturn:
         return self.plan[self.index][1]
 
 
-def clearance_problem(vector, raw, age, ray_ages=None, margin=12):
+def clearance_problem(vector, raw, age, ray_ages=None, margin=TRANSLATION_CLEARANCE_CM, allow_unknown_turn=False):
     """Only commanded directions, plus all four sides during a body rotation.
 
-    Fresh no-return is unknown, not a numeric distance. This experimental policy
-    accepts it for a translational ray; a turn requires four finite clear rays
-    because the entire rectangular footprint sweeps around its center.
+    A fresh no-return remains unknown, not a numeric free-space measurement.
+    Operator confirmation of the swept area permits unknown rays during turns.
+    Too-close measured returns, malformed values and stale rays always stop.
     """
     if not any(vector):
         return None
@@ -172,7 +182,8 @@ def clearance_problem(vector, raw, age, ray_ages=None, margin=12):
             if type(ray_age) is not int or ray_age<0 or age+ray_age/1000. >= .35:
                 return 'Số đo {} quá cũ'.format(direction)
         value = raw.get(direction)
-        limit = 30 if r else margin
-        if type(value) is not int or value <= 3 or (value == 999 and r) or (value != 999 and not limit < value < 400):
-            return 'Khoảng hở {} chưa đủ / chưa xác nhận'.format(direction)
+        limit = TURN_CLEARANCE_CM[direction] if r else margin
+        if type(value) is not int or value <= 3 or (value == 999 and r and not allow_unknown_turn) or (value != 999 and not limit < value < 400):
+            if value==999:return 'Sonar {} không echo; chưa xác nhận khoảng trống quay'.format(direction)
+            return 'Sonar {}: {} cm, cần lớn hơn {} cm'.format(direction,value,limit)
     return None
