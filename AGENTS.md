@@ -1,5 +1,11 @@
 # AGENTS.md — quy tắc dự án AGV Mecanum
 
+## Triển khai có người vận hành (11/11/2026)
+
+- Dùng hướng dẫn `docs/TRIEN_KHAI_TOUCH_VECTOR_V2.md` cho gói dc1092c62572b3ec2ac7c13fde3014ec392b23e0 và ngữ cảnh bàn giao hiện tại.
+- Trong chat triển khai: một bước nhỏ mỗi lần, ghi rõ terminal PC/Jetson và chỗ bấm, đợi kết quả/ảnh sau bước quan trọng. Xem dấu nhắc để xác nhận SSH; không coi tên tab JETSON là bằng chứng. Không yêu cầu chạy lại bước đã xác nhận xong.
+- Xác minh trạng thái nguồn và xe kê chắc trước hướng dẫn bật/chạy; công tắc tổng cấp cả Jetson/Mega/motor. Áp dụng trình tự shutdown trong hướng dẫn, không tự đổi dây hoặc suy ra nguồn motor đã cách ly. Không yêu cầu bí mật trong chat.
+
 ## Phạm vi và nguồn sự thật
 
 - Đọc PROJECT_CONTEXT.md và inventory trước khi sửa. Phân biệt bằng chứng trong file, báo cáo người dùng, giả lập và giả thuyết.
