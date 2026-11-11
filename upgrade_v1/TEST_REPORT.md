@@ -1,3 +1,5 @@
+> Báo cáo lịch sử bản10/11. Kết quả bản sửa11/11 xem [TEST_REPORT_TOUCH_V2.md](TEST_REPORT_TOUCH_V2.md).
+
 # Kiểm chứng VECTOR1 — 10/11/2026
 
 Nguồn, hash và phạm vi: PROVENANCE.json. Không có kết nối trực tiếp với Jetson, Mega hoặc motor của người dùng.

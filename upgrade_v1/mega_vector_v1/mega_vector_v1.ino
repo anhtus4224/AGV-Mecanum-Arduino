@@ -214,7 +214,7 @@ uint8_t cornerCenterCount = 0;
 VmAvoid vectorAvoid;
 int actualWheels[4]={0,0,0,0},vectorTarget[4]={0,0,0,0};
 uint32_t vectorTickAt=0,motionAt=0,motionSeq=0,hostAt=0,driveAt=0;
-uint32_t hostSession=0,hostSequence=0;bool hostOwned=false,vectorManual=false;
+uint32_t hostSession=0,hostSequence=0,targetSequence=0;bool hostOwned=false,vectorManual=false;
 VmRange rangeF={999,0},rangeB={999,0},rangeL={999,0},rangeR={999,0};
 int scanLeft=999,scanRight=999,scanSideL=999,scanSideR=999,servoAngle=90;
 uint32_t servoAt=0;char frameBuffer[110];uint8_t frameLength=0;bool frameActive=false,frameOverflow=false;
@@ -711,7 +711,7 @@ void updateSonar() {
 void handleLineAndObstacleMode() {
   unsigned long now = millis();
 
-  if (turnState == IDLE_LINE && rangeF.valid(now) && rangeF.cm <= 60) {
+  if (turnState == IDLE_LINE && rangeF.valid(now) && rangeF.cm <= VM_OBSTACLE_CM) {
     vectorBeginAvoidance(); return;
   }
 
@@ -1644,6 +1644,7 @@ void executeCorridorAvoidanceReference() {
 }
 uint16_t vectorCrc(const char *p){uint16_t c=0xffff;while(*p){c^=(uint8_t)*p++<<8;for(int i=0;i<8;i++)c=c&0x8000?(c<<1)^0x1021:c<<1;}return c;}
 void vectorStop(){
+ targetSequence=0;
  stopAllMotors();vectorManual=false;vectorAvoid.phase=VmAvoid::OFF;
  isExecutingAvoidance=false;isLineTrackingMode=false;turnState=IDLE_LINE;currentCommand='S';
  for(int i=0;i<4;i++)vectorTarget[i]=0;
@@ -1686,7 +1687,7 @@ void vectorFrame(){
  hostSequence=seq;hostAt=now;
  if(op=='D'){
   if(isLineTrackingMode||vectorAvoid.phase!=VmAvoid::OFF){vectorAck(seq,"MODE");return;}
-  vmMix(f,s,r,vectorAvoid.cap,vectorTarget);vectorManual=true;driveAt=now;currentCommand='V';
+  vmMix(f,s,r,vectorAvoid.cap,vectorTarget);targetSequence=seq;vectorManual=true;driveAt=now;currentCommand='V';
  }else if(op=='A'){
   if(!isLineTrackingMode){vectorStop();toggleMode("VECTOR1");}
  }else if(op=='M'){vectorStop();}
@@ -1783,5 +1784,7 @@ void vectorMotion(){
  for(int i=0;i<4;i++){Serial.print(',');Serial.print(actualWheels[i]);}
  Serial.print(',');Serial.print(isLineTrackingMode?1:0);Serial.print(',');Serial.print((int)turnState);
  Serial.print(',');Serial.println(isExecutingAvoidance?1:0);
+ Serial.print("VECTOR_TARGET:");Serial.print(targetSequence);
+ for(int i=0;i<4;i++){Serial.print(',');Serial.print(vectorTarget[i]);}Serial.println();
  Serial.print("VECTOR_STATE:");Serial.print((int)vectorAvoid.phase);Serial.print(',');Serial.print(vectorAvoid.cap);Serial.print(',');Serial.println(vectorAvoid.enabled?1:0);
 }

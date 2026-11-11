@@ -1632,7 +1632,7 @@ HTML_PAGE = """<!DOCTYPE html>
         .camera-panel.show-full-image .cam-box img {object-fit:contain !important;}
         #camera_fit {background:#122b40;color:#b9e6fc;border:1px solid #36708a;border-radius:4px;padding:5px 8px;cursor:pointer;font-size:11px;}
         .camera-panel.expanded #camera_fit {position:fixed;right:180px;top:16px;z-index:10001;padding:12px;}
-        .ctrl-btn {touch-action:none;}
+        .ctrl-btn,.ctrl-btn * {touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
         .ctrl-btn.held {background:#38bdf8;color:#020617;border-color:#7dd3fc;}
         #control_status {font-size:11px;color:#94a3b8;text-align:center;margin-top:10px;min-height:18px;}
         .drive-dock {margin-top:12px;}
@@ -1701,7 +1701,7 @@ HTML_PAGE = """<!DOCTYPE html>
         body.camera-zoomed #camera_view {height:100vh!important;height:100dvh!important;max-height:none!important;}
 
         .driving-mobile:not(.driving-landscape) #camera_view {aspect-ratio:4/3;min-height:140px;max-height:calc(100vh - 470px);max-height:calc(100dvh - 470px);}
-    #vector_joystick{touch-action:none;user-select:none;width:130px;height:130px;border:2px solid #38bdf8;border-radius:50%;margin:8px auto;text-align:center;display:flex;align-items:center;justify-content:center;background:#12314a;white-space:pre-line;}
+    #vector_joystick{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;width:130px;height:130px;border:2px solid #38bdf8;border-radius:50%;margin:8px auto;text-align:center;display:flex;align-items:center;justify-content:center;background:#12314a;white-space:pre-line;}
 .vector-owner{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;align-items:center}.vector-owner button{min-height:32px;}.vector-owner label{max-width:250px;}
 .driving-mobile #drive_dock{max-height:58dvh;overflow:auto;} .driving-mobile .vector-owner{font-size:10px;}
 </style>
@@ -2132,7 +2132,7 @@ function drawMap() {
         ctx.stroke();ctx.restore();
     }
     if(currentMap&&currentMap.pose&&!currentMap.pose.valid){const p=currentMap.pose,q=project(p.x,p.y);line([q[0]-7,q[1]-7],[q[0]+7,q[1]+7],'#fb7185',2);line([q[0]-7,q[1]+7],[q[0]+7,q[1]-7],'#fb7185',2);}
-    // Always show the illustrative 30 cm Mecanum model; origin is NOT a measured position.
+    // Measured outer envelope 34 x 47 cm; wheel sizes/placement remain illustrative.
     const p=renderVehiclePose(v);
     const theta=p.theta*Math.PI/180;
     const local=(x,y,z=0)=>project(p.x+x*Math.cos(theta)-y*Math.sin(theta),p.y+x*Math.sin(theta)+y*Math.cos(theta),z);
@@ -2142,13 +2142,13 @@ function drawMap() {
         if(mapView==='iso')for(let i=0;i<4;i++){const a=pts[i],b=pts[(i+1)%4];face([local(a[0],a[1],z),local(b[0],b[1],z),local(b[0],b[1],z+height),local(a[0],a[1],z+height)],'#142e40');}
         face(pts.map(a=>local(a[0],a[1],mapView==='iso'?z+height:0)),color);
     }
-    for(const x of [-.105,.105])for(const y of [-.17,.17]){
+    for(const x of [-.105,.105])for(const y of [-.205,.205]){
         box(x,y,.095,.06,0,.075,'#172333');
         // Diagonal rollers distinguish all four Mecanum wheels.
         const slant=(x*y>0?1:-1);
         for(let i=-1;i<=1;i++)line(local(x+i*.025-.008,y-.02,mapView==='iso'?.079:0),local(x+i*.025+.008*slant,y+.02,mapView==='iso'?.079:0),'#8bd2dd',1.5);
     }
-    box(0,0,.30,.25,.055,.06,p.auto_waiting_measurement||p.lost?'#596678':p.model_only?'#536375':'#d0a524');
+    box(0,0,.34,.35,.055,.06,p.auto_waiting_measurement||p.lost?'#596678':p.model_only?'#536375':'#d0a524');
     box(-.045,0,.085,.105,.12,.035,'#26546b');
     box(.085,0,.04,.12,.12,.025,'#81c8d8');
     const nose=local(.32,0,.16);line(local(.12,0,.16),nose,'#22d3ee',2.5);line(local(.25,.035,.16),nose,'#22d3ee',2);line(local(.25,-.035,.16),nose,'#22d3ee',2);
@@ -2541,7 +2541,7 @@ physics_worker=vector_physics_worker
 from pathlib import Path as _VectorPath
 _controls=(_VectorPath(__file__).parent/'vector_controls.js').read_text(encoding='utf-8')
 HTML_PAGE=HTML_PAGE.replace('__VECTOR_CONTROLS__', 'const AGV_CSRF='+json.dumps(gateway.csrf)+';\n'+_controls)
-HTML_PAGE=HTML_PAGE.replace('<script>', "<script>\nconst originalFetch=window.fetch.bind(window);\nwindow.fetch=(url,options={})=>{\n const same=typeof url==='string'&&(url.startsWith('/')&&!url.startsWith('//'));\n if(same){options={...options,headers:{...(options.headers||{}),'X-AGV-CSRF':__CSRF__,'X-AGV-Lease':ownerLease}};\n if(!url.startsWith('/video_feed')&&!url.startsWith('/telemetry')&&!url.startsWith('/map/export'))url+=(url.includes('?')?'&':'?')+'controller='+encodeURIComponent(controllerId);}\n return originalFetch(url,options);\n};\n".replace('__CSRF__',json.dumps(gateway.csrf)),1)
+HTML_PAGE=HTML_PAGE.replace('<script>', "<script>\nconst originalFetch=window.fetch.bind(window);\nwindow.fetch=(url,options={})=>{\n const same=typeof url==='string'&&(url.startsWith('/')&&!url.startsWith('//'));\n if(same){options={...options,headers:{'X-AGV-CSRF':__CSRF__,'X-AGV-Lease':ownerLease,...(options.headers||{})}};\n if(!url.startsWith('/video_feed')&&!url.startsWith('/telemetry')&&!url.startsWith('/map/export')&&!new URL(url,location.href).searchParams.has('controller'))url+=(url.includes('?')?'&':'?')+'controller='+encodeURIComponent(controllerId);}\n return originalFetch(url,options);\n};\n".replace('__CSRF__',json.dumps(gateway.csrf)),1)
 
 if __name__ == '__main__':
     if not gateway.user or len(gateway.password)<12:

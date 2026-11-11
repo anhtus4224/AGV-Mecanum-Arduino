@@ -1,0 +1,407 @@
+diff --git a/upgrade_v1/agv_vector_gateway.py b/upgrade_v1/agv_vector_gateway.py
+index 6f016fb..14ba01a 100644
+--- a/upgrade_v1/agv_vector_gateway.py
++++ b/upgrade_v1/agv_vector_gateway.py
+@@ -48,6 +48,9 @@ class Gateway:
+                 self.ready=False;self.g['clear_link'](self.link_reason);return {'msg':'Lỗi USB','sent':False},503
+             if op=='S':self.stopped=True
+             if op in ('D','A'):self.stopped=False
++            if op=='D':
++                self.g['state']['last_drive_request']={'sequence':self.seq,'vector_pwm':[f,right,rot],
++                    'at_monotonic_ms':round(time.monotonic()*1000)}
+             return {'status':'sent','sent':True,'acknowledged':False,'sequence':self.seq,'command':op},200
+ 
+     def stop(self):
+@@ -96,6 +99,14 @@ class Gateway:
+             return
+         if line.startswith('AVOID_FAULT:'):
+             self.g['state']['avoid_fault']=line[12:];return
++        if line.startswith('VECTOR_TARGET:'):
++            try:
++                values=list(map(int,line[14:].split(',')))
++                if len(values)==5 and all(-255<=v<=255 for v in values[1:]):
++                    self.g['state']['firmware_target']={'sequence':values[0],'wheels':values[1:],
++                        'at_monotonic_ms':round(now*1000)}
++            except ValueError:pass
++            return
+         old_motion=self.g.get('motion_feedback')
+         old_sonar=self.g['state'].get('sonar_raw')
+         self.g['parse_mega_line'](line)
+@@ -201,6 +212,11 @@ class Gateway:
+         if not 8<=len(client)<=64 or not client.replace('_','').replace('-','').isalnum():return None
+         return (session['viewer'],client)
+ 
++    def has_lease(self):
++        # Recheck inside the endpoint's lock: ownership can change after before_request.
++        return (self.identity()==self.owner and time.monotonic()<self.owner_until
++                and hmac.compare_digest(request.headers.get('X-AGV-Lease',''),self.owner_lease))
++
+     def install(self,app):
+         app.secret_key=secrets.token_bytes(32)
+         app.config.update(SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Strict',MAX_CONTENT_LENGTH=16384)
+@@ -222,12 +238,17 @@ class Gateway:
+                 # Any authenticated viewer may explicitly STOP. Other viewers' lifecycle events are suppressed by UI.
+                 stop=path=='/mecanum_control' and request.args.get('estop')=='1'
+                 if stop:
++                    if request.args.get('scope')=='owner' and not self.has_lease():
++                        return jsonify(status='ignored_old_owner')
+                     try: seq=int(request.args.get('sequence','0'))
+                     except ValueError:return jsonify(msg='Sequence không hợp lệ'),400
+                     if who is not None:self.web_sequence[who]=max(seq,self.web_sequence.get(who,0))
+                     if who!=self.owner:self.owner=None;self.owner_until=0
++                    self.tickets.clear()
+                     self.g['simulation_vector']=[0.,0.,0.]
+-                    return None
++                    # Keep authorization/fencing and the actual STOP atomic with
++                    # respect to claim/release/vector on other Flask threads.
++                    return app.view_functions[request.endpoint]()
+                 if who is None or who!=self.owner or time.monotonic()>=self.owner_until or not hmac.compare_digest(request.headers.get('X-AGV-Lease',''),self.owner_lease):
+                     return jsonify(error='Bạn chưa có quyền lái hoặc quyền đã hết hạn',msg='Chưa có quyền lái'),409
+                 if path=='/toggle_mode':
+@@ -246,9 +267,16 @@ class Gateway:
+         def diagnostics():
+             with self.lock:
+                 now=time.monotonic();m=self.g.get('motion_feedback')
+-                return jsonify(gateway_revision='SETPOINT_ACK_V1',ready=self.ready,port=self.g['state'].get('port'),
++                wheels=m['wheels'] if m else None
++                electrical=[-wheels[0],wheels[1],-wheels[2],wheels[3]] if wheels else None
++                return jsonify(gateway_revision='TOUCH_VECTOR_V2',ready=self.ready,port=self.g['state'].get('port'),
+                     motion_age_ms=round((now-m['received'])*1000) if m else None,
+                     current_pwm=m['wheels'] if m else None,
++                    wheel_order=['FL','FR','RL','RR'],
++                    requested_vector=self.g['state'].get('last_drive_request'),
++                    firmware_target=self.g['state'].get('firmware_target'),
++                    driver_pwm=electrical,driver_pwm_source='derived from MOTION and unchanged drive polarity; not measured pins',
++                    avoid_fault=self.g['state'].get('avoid_fault'),
+                     last_drive_ack=self.g['state'].get('last_drive_ack'),
+                     last_nonzero_pwm=self.g['state'].get('last_nonzero_pwm'),
+                     link_events=list(self.link_events),
+@@ -267,10 +295,14 @@ class Gateway:
+                 return jsonify(status='owner',lease=self.owner_lease,msg='Đã nhận quyền; các phím cũ đã được bỏ')
+         @app.route('/control/renew',methods=['POST'])
+         def renew():
+-            with self.lock:return jsonify(status='owner',ticket=self.issue_ticket())
++            with self.lock:
++                if not self.has_lease():return jsonify(msg='Quyền lái đã hết'),409
++                return jsonify(status='owner',ticket=self.issue_ticket())
+         @app.route('/control/release',methods=['POST'])
+         def release():
+-            with self.lock:self.stop();self.owner=None;self.owner_until=0
++            with self.lock:
++                if not self.has_lease():return jsonify(msg='Quyền lái đã hết'),409
++                self.stop();self.g['simulation_vector']=[0.,0.,0.];self.owner=None;self.owner_until=0;self.tickets.clear()
+             return jsonify(status='released')
+         @app.route('/control/profile',methods=['POST'])
+         def profile():
+@@ -295,7 +327,7 @@ class Gateway:
+                 return jsonify(msg='Vector phải có ba số hữu hạn trong [-1,1]',code='VECTOR'),400
+             with self.lock:
+                 key=self.identity()
+-                if key!=self.owner or time.monotonic()>=self.owner_until:return jsonify(msg='Quyền lái đã hết'),409
++                if not self.has_lease():return jsonify(msg='Quyền lái đã hết'),409
+                 old=self.web_sequence
+                 if sequence<=old.get(key,0):return jsonify(status='ignored_stale')
+                 if body.get('environment')!=self.g['driving_environment'] or body.get('generation')!=self.g['drive_generation']:
+@@ -305,10 +337,12 @@ class Gateway:
+                 if issued is None or issued[1:]!=(self.owner_lease,self.g['driving_environment'],self.g['drive_generation']):
+                     return jsonify(msg='Phiếu lệnh không hợp lệ; tải lại trang và nhận quyền',code='TICKET'),409
+                 if not 0<=time.monotonic()-issued[0]<=.3:
+-                    return jsonify(msg='Gói điều khiển tới quá chậm (>300 ms); đã dừng. Nhận quyền lại khi mạng ổn định',code='COMMAND_EXPIRED'),409
++                    return jsonify(msg='Gói điều khiển tới quá chậm (>300 ms); đã dừng. Nhận quyền lại khi mạng ổn định',code='COMMAND_EXPIRED',age_ms=round((time.monotonic()-issued[0])*1000)),409
+                 old[key]=sequence;self.web_sequence={key:sequence}
+                 if self.g['driving_environment']=='simulation':
+                     self.g['simulation_vector']=v;self.g['simulation_vector_at']=time.monotonic()
+-                    return jsonify(status='simulation',command='VECTOR')
++                    return jsonify(status='simulation',command='VECTOR',ticket=self.issue_ticket())
+                 if self.g['state']['mode']!='LÁI TAY' or not self.g['auto_or_manual_fresh']():return jsonify(msg='Cần LÁI TAY và dữ liệu Mega mới'),409
+-                result,code=self.write('D',*[int(round(x*255)) for x in v]);return jsonify(result),code
++                result,code=self.write('D',*[int(round(x*255)) for x in v])
++                if code==200:result['ticket']=self.issue_ticket()
++                return jsonify(result),code
+diff --git a/upgrade_v1/mega_vector_v1/VectorMotion.h b/upgrade_v1/mega_vector_v1/VectorMotion.h
+index fe19ade..390c666 100644
+--- a/upgrade_v1/mega_vector_v1/VectorMotion.h
++++ b/upgrade_v1/mega_vector_v1/VectorMotion.h
+@@ -2,6 +2,7 @@
+ #include <stdint.h>
+ #include <math.h>
+ #include <stdlib.h>
++const int VM_OBSTACLE_CM=55;
+ // Logical FL FR RL RR: preserve the existing drive() motor polarity mapping.
+ inline int vmClamp(int x,int a,int b){return x<a?a:x>b?b:x;}
+ inline void vmMix(int f,int right,int clockwise,int cap,int *out){
+@@ -20,23 +21,29 @@ struct VmAvoid {
+  Phase phase=OFF;uint32_t since=0,centerSince=0,lastRange=0;int side=0,closest=400,edgeSamples=0;
+  bool enabled=false,seenSide=false;int cap=80;const char *fault="";
+  // Commissioning envelope in cm. Measure the COMPLETE protruding body before arming.
+- int halfWidth=15,frontOverhang=15,rearOverhang=15,margin=12;
++ // User measured full wheel envelope 47 cm, length 34 cm including line bar.
++ float halfWidth=23.5f;int frontOverhang=17,rearOverhang=17,margin=12;
+  void enter(Phase p,uint32_t now){phase=p;since=now;centerSince=0;}
+  void fail(const char *reason,uint32_t now){fault=reason;enter(FAULT,now);}
+- void start(uint32_t now){seenSide=false;closest=400;edgeSamples=0;fault="";enter(SCAN_LEFT,now);}
++ void start(uint32_t now){seenSide=false;closest=400;edgeSamples=0;lastRange=0;fault="";enter(SCAN_LEFT,now);}
+  bool active()const{return phase!=OFF&&phase!=HANDOFF&&phase!=FAULT;}
+  // Scan samples are taken by the non-blocking firmware integration.
+  void choose(int left,int right,int diagLeft,int diagRight,uint32_t now){
+-  int need=2*halfWidth+margin;
+-  bool l=left>need&&left<400&&diagLeft>frontOverhang+margin&&diagLeft<400;
+-  bool r=right>need&&right<400&&diagRight>frontOverhang+margin&&diagRight<400;
++  float need=2*halfWidth+margin;
++  // Conservative corner envelope. Sensor origins/blind sectors still need measuring;
++  // these sparse rays do not prove the entire swept rectangle is unobstructed.
++  float diagonal=sqrtf((halfWidth+margin)*(halfWidth+margin)+(frontOverhang+margin)*(frontOverhang+margin));
++  bool l=left>need&&left<400&&diagLeft>diagonal&&diagLeft<400;
++  bool r=right>need&&right<400&&diagRight>diagonal&&diagRight<400;
+   if(!enabled||(!l&&!r)){fail(!enabled?"AVOID_NOT_ARMED":"NO_CONFIRMED_CORRIDOR",now);return;}
+   side=r&&(!l||right>=left)?1:-1;enter(OUT,now);
+  }
+  void tick(uint32_t now,VmRange front,VmRange back,VmRange left,VmRange right,bool center,int &f,int &s){
+   f=s=0;if(!active()||phase<OUT)return;
+   VmRange near=side>0?left:right,outer=side>0?right:left;
+-  if(!front.valid(now)||!back.valid(now)||!near.valid(now)||!outer.valid(now)) {fail("SONAR_UNKNOWN",now);return;}
++  if(!front.valid(now)){fail("SONAR_FRONT_UNKNOWN",now);return;}
++  if(!back.valid(now)){fail("SONAR_REAR_UNKNOWN",now);return;}
++  if(!near.valid(now)||!outer.valid(now)){fail("SONAR_SIDE_UNKNOWN",now);return;}
+   // Front sensor points forward again before motion. Never use EMA for collision guards.
+   if(front.cm<frontOverhang+margin||outer.cm<halfWidth+margin||near.cm<halfWidth+margin){fail("CLEARANCE",now);return;}
+   if(back.valid(now)&&back.cm<rearOverhang+margin){fail("REAR_CLEARANCE",now);return;}
+@@ -52,7 +59,9 @@ struct VmAvoid {
+    if(near.at!=lastRange){lastRange=near.at;if(near.cm>closest+20)edgeSamples++;else edgeSamples=0;}
+    if(edgeSamples>=3&&(uint32_t)(now-since)>700)enter(RETURN,now);
+   } else if(phase==RETURN){
+-   f=200;s=-side*100;
++   // Blend into the return diagonal over 400 ms; retain wheel slew and all guards.
++   int blend=vmClamp((uint32_t)(now-since)>400?400:(int)(now-since),0,400);
++   f=255-(long)55*blend/400;s=-(long)side*100*blend/400;
+    if(center)enter(CENTER,now);
+   } else if(phase==CENTER){
+    f=90;s=0;
+diff --git a/upgrade_v1/mega_vector_v1/mega_vector_v1.ino b/upgrade_v1/mega_vector_v1/mega_vector_v1.ino
+index f2973f2..b5f3e19 100644
+--- a/upgrade_v1/mega_vector_v1/mega_vector_v1.ino
++++ b/upgrade_v1/mega_vector_v1/mega_vector_v1.ino
+@@ -214,7 +214,7 @@ uint8_t cornerCenterCount = 0;
+ VmAvoid vectorAvoid;
+ int actualWheels[4]={0,0,0,0},vectorTarget[4]={0,0,0,0};
+ uint32_t vectorTickAt=0,motionAt=0,motionSeq=0,hostAt=0,driveAt=0;
+-uint32_t hostSession=0,hostSequence=0;bool hostOwned=false,vectorManual=false;
++uint32_t hostSession=0,hostSequence=0,targetSequence=0;bool hostOwned=false,vectorManual=false;
+ VmRange rangeF={999,0},rangeB={999,0},rangeL={999,0},rangeR={999,0};
+ int scanLeft=999,scanRight=999,scanSideL=999,scanSideR=999,servoAngle=90;
+ uint32_t servoAt=0;char frameBuffer[110];uint8_t frameLength=0;bool frameActive=false,frameOverflow=false;
+@@ -711,7 +711,7 @@ void updateSonar() {
+ void handleLineAndObstacleMode() {
+   unsigned long now = millis();
+ 
+-  if (turnState == IDLE_LINE && rangeF.valid(now) && rangeF.cm <= 60) {
++  if (turnState == IDLE_LINE && rangeF.valid(now) && rangeF.cm <= VM_OBSTACLE_CM) {
+     vectorBeginAvoidance(); return;
+   }
+ 
+@@ -1644,6 +1644,7 @@ void executeCorridorAvoidanceReference() {
+ }
+ uint16_t vectorCrc(const char *p){uint16_t c=0xffff;while(*p){c^=(uint8_t)*p++<<8;for(int i=0;i<8;i++)c=c&0x8000?(c<<1)^0x1021:c<<1;}return c;}
+ void vectorStop(){
++ targetSequence=0;
+  stopAllMotors();vectorManual=false;vectorAvoid.phase=VmAvoid::OFF;
+  isExecutingAvoidance=false;isLineTrackingMode=false;turnState=IDLE_LINE;currentCommand='S';
+  for(int i=0;i<4;i++)vectorTarget[i]=0;
+@@ -1686,7 +1687,7 @@ void vectorFrame(){
+  hostSequence=seq;hostAt=now;
+  if(op=='D'){
+   if(isLineTrackingMode||vectorAvoid.phase!=VmAvoid::OFF){vectorAck(seq,"MODE");return;}
+-  vmMix(f,s,r,vectorAvoid.cap,vectorTarget);vectorManual=true;driveAt=now;currentCommand='V';
++  vmMix(f,s,r,vectorAvoid.cap,vectorTarget);targetSequence=seq;vectorManual=true;driveAt=now;currentCommand='V';
+  }else if(op=='A'){
+   if(!isLineTrackingMode){vectorStop();toggleMode("VECTOR1");}
+  }else if(op=='M'){vectorStop();}
+@@ -1783,5 +1784,7 @@ void vectorMotion(){
+  for(int i=0;i<4;i++){Serial.print(',');Serial.print(actualWheels[i]);}
+  Serial.print(',');Serial.print(isLineTrackingMode?1:0);Serial.print(',');Serial.print((int)turnState);
+  Serial.print(',');Serial.println(isExecutingAvoidance?1:0);
++ Serial.print("VECTOR_TARGET:");Serial.print(targetSequence);
++ for(int i=0;i<4;i++){Serial.print(',');Serial.print(vectorTarget[i]);}Serial.println();
+  Serial.print("VECTOR_STATE:");Serial.print((int)vectorAvoid.phase);Serial.print(',');Serial.print(vectorAvoid.cap);Serial.print(',');Serial.println(vectorAvoid.enabled?1:0);
+ }
+diff --git a/upgrade_v1/stream_server_vector_v1.py b/upgrade_v1/stream_server_vector_v1.py
+index 406848e..95d4658 100644
+--- a/upgrade_v1/stream_server_vector_v1.py
++++ b/upgrade_v1/stream_server_vector_v1.py
+@@ -1632,7 +1632,7 @@ HTML_PAGE = """<!DOCTYPE html>
+         .camera-panel.show-full-image .cam-box img {object-fit:contain !important;}
+         #camera_fit {background:#122b40;color:#b9e6fc;border:1px solid #36708a;border-radius:4px;padding:5px 8px;cursor:pointer;font-size:11px;}
+         .camera-panel.expanded #camera_fit {position:fixed;right:180px;top:16px;z-index:10001;padding:12px;}
+-        .ctrl-btn {touch-action:none;}
++        .ctrl-btn,.ctrl-btn * {touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+         .ctrl-btn.held {background:#38bdf8;color:#020617;border-color:#7dd3fc;}
+         #control_status {font-size:11px;color:#94a3b8;text-align:center;margin-top:10px;min-height:18px;}
+         .drive-dock {margin-top:12px;}
+@@ -1701,7 +1701,7 @@ HTML_PAGE = """<!DOCTYPE html>
+         body.camera-zoomed #camera_view {height:100vh!important;height:100dvh!important;max-height:none!important;}
+ 
+         .driving-mobile:not(.driving-landscape) #camera_view {aspect-ratio:4/3;min-height:140px;max-height:calc(100vh - 470px);max-height:calc(100dvh - 470px);}
+-    #vector_joystick{touch-action:none;user-select:none;width:130px;height:130px;border:2px solid #38bdf8;border-radius:50%;margin:8px auto;text-align:center;display:flex;align-items:center;justify-content:center;background:#12314a;white-space:pre-line;}
++    #vector_joystick{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;width:130px;height:130px;border:2px solid #38bdf8;border-radius:50%;margin:8px auto;text-align:center;display:flex;align-items:center;justify-content:center;background:#12314a;white-space:pre-line;}
+ .vector-owner{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;align-items:center}.vector-owner button{min-height:32px;}.vector-owner label{max-width:250px;}
+ .driving-mobile #drive_dock{max-height:58dvh;overflow:auto;} .driving-mobile .vector-owner{font-size:10px;}
+ </style>
+@@ -2132,7 +2132,7 @@ function drawMap() {
+         ctx.stroke();ctx.restore();
+     }
+     if(currentMap&&currentMap.pose&&!currentMap.pose.valid){const p=currentMap.pose,q=project(p.x,p.y);line([q[0]-7,q[1]-7],[q[0]+7,q[1]+7],'#fb7185',2);line([q[0]-7,q[1]+7],[q[0]+7,q[1]-7],'#fb7185',2);}
+-    // Always show the illustrative 30 cm Mecanum model; origin is NOT a measured position.
++    // Measured outer envelope 34 x 47 cm; wheel sizes/placement remain illustrative.
+     const p=renderVehiclePose(v);
+     const theta=p.theta*Math.PI/180;
+     const local=(x,y,z=0)=>project(p.x+x*Math.cos(theta)-y*Math.sin(theta),p.y+x*Math.sin(theta)+y*Math.cos(theta),z);
+@@ -2142,13 +2142,13 @@ function drawMap() {
+         if(mapView==='iso')for(let i=0;i<4;i++){const a=pts[i],b=pts[(i+1)%4];face([local(a[0],a[1],z),local(b[0],b[1],z),local(b[0],b[1],z+height),local(a[0],a[1],z+height)],'#142e40');}
+         face(pts.map(a=>local(a[0],a[1],mapView==='iso'?z+height:0)),color);
+     }
+-    for(const x of [-.105,.105])for(const y of [-.17,.17]){
++    for(const x of [-.105,.105])for(const y of [-.205,.205]){
+         box(x,y,.095,.06,0,.075,'#172333');
+         // Diagonal rollers distinguish all four Mecanum wheels.
+         const slant=(x*y>0?1:-1);
+         for(let i=-1;i<=1;i++)line(local(x+i*.025-.008,y-.02,mapView==='iso'?.079:0),local(x+i*.025+.008*slant,y+.02,mapView==='iso'?.079:0),'#8bd2dd',1.5);
+     }
+-    box(0,0,.30,.25,.055,.06,p.auto_waiting_measurement||p.lost?'#596678':p.model_only?'#536375':'#d0a524');
++    box(0,0,.34,.35,.055,.06,p.auto_waiting_measurement||p.lost?'#596678':p.model_only?'#536375':'#d0a524');
+     box(-.045,0,.085,.105,.12,.035,'#26546b');
+     box(.085,0,.04,.12,.12,.025,'#81c8d8');
+     const nose=local(.32,0,.16);line(local(.12,0,.16),nose,'#22d3ee',2.5);line(local(.25,.035,.16),nose,'#22d3ee',2);line(local(.25,-.035,.16),nose,'#22d3ee',2);
+@@ -2541,7 +2541,7 @@ physics_worker=vector_physics_worker
+ from pathlib import Path as _VectorPath
+ _controls=(_VectorPath(__file__).parent/'vector_controls.js').read_text(encoding='utf-8')
+ HTML_PAGE=HTML_PAGE.replace('__VECTOR_CONTROLS__', 'const AGV_CSRF='+json.dumps(gateway.csrf)+';\n'+_controls)
+-HTML_PAGE=HTML_PAGE.replace('<script>', "<script>\nconst originalFetch=window.fetch.bind(window);\nwindow.fetch=(url,options={})=>{\n const same=typeof url==='string'&&(url.startsWith('/')&&!url.startsWith('//'));\n if(same){options={...options,headers:{...(options.headers||{}),'X-AGV-CSRF':__CSRF__,'X-AGV-Lease':ownerLease}};\n if(!url.startsWith('/video_feed')&&!url.startsWith('/telemetry')&&!url.startsWith('/map/export'))url+=(url.includes('?')?'&':'?')+'controller='+encodeURIComponent(controllerId);}\n return originalFetch(url,options);\n};\n".replace('__CSRF__',json.dumps(gateway.csrf)),1)
++HTML_PAGE=HTML_PAGE.replace('<script>', "<script>\nconst originalFetch=window.fetch.bind(window);\nwindow.fetch=(url,options={})=>{\n const same=typeof url==='string'&&(url.startsWith('/')&&!url.startsWith('//'));\n if(same){options={...options,headers:{'X-AGV-CSRF':__CSRF__,'X-AGV-Lease':ownerLease,...(options.headers||{})}};\n if(!url.startsWith('/video_feed')&&!url.startsWith('/telemetry')&&!url.startsWith('/map/export')&&!new URL(url,location.href).searchParams.has('controller'))url+=(url.includes('?')?'&':'?')+'controller='+encodeURIComponent(controllerId);}\n return originalFetch(url,options);\n};\n".replace('__CSRF__',json.dumps(gateway.csrf)),1)
+ 
+ if __name__ == '__main__':
+     if not gateway.user or len(gateway.password)<12:
+diff --git a/upgrade_v1/vector_controls.js b/upgrade_v1/vector_controls.js
+index 9a404ee..3a44fbf 100644
+--- a/upgrade_v1/vector_controls.js
++++ b/upgrade_v1/vector_controls.js
+@@ -4,17 +4,18 @@ const heldKeys=new Map(),heldPointers=new Map();
+ const KEY_COMMANDS={KeyW:[1,0,0],KeyS:[-1,0,0],KeyA:[0,-1,0],KeyD:[0,1,0],KeyQ:[0,0,-1],KeyE:[0,0,1],DiagNW:[1,-1,0],DiagNE:[1,1,0],DiagSW:[-1,-1,0],DiagSE:[-1,1,0]};
+ const BUTTON_KEYS={W:'KeyW',B:'KeyS',A:'KeyA',D:'KeyD',Q:'KeyQ',E:'KeyE',NW:'DiagNW',NE:'DiagNE',SW:'DiagSW',SE:'DiagSE'};
+ let ownerLease="";
+-let controlSequence=0,ownsControl=false,vectorFlight=false,joystickVector=[0,0,0],inputOrder=0;
++let controlSequence=0,ownsControl=false,vectorFlight=false,joystickVector=[0,0,0],joyPointer=null;
++let controlEpoch=0,intentEpoch=0,nextTicket=null,stopFlight=null,releaseFlight=null,claimFlight=false;
+ function controlStatus(text,error=false){byId('control_status').textContent=text;byId('control_status').style.color=error?'#fda4af':'#94a3b8';}
+-function clearHeldInputs(){const had=heldKeys.size||heldPointers.size||joystickVector.some(x=>x);heldKeys.clear();heldPointers.clear();joystickVector=[0,0,0];return Boolean(had);}
++function clearHeldInputs(){intentEpoch++;const had=heldKeys.size||heldPointers.size||joystickVector.some(x=>x);heldKeys.clear();heldPointers.clear();joystickVector=[0,0,0];joyPointer=null;return Boolean(had);}
+ function intentVector(){
+  const keys=new Set([...heldKeys.keys(),...heldPointers.values()]);let v=joystickVector.slice();
+  for(const key of keys){const a=KEY_COMMANDS[key];if(a)v=v.map((x,i)=>x+a[i]);}
+  return v.map(x=>Math.max(-1,Math.min(1,x)));
+ }
+-async function api(url,body){
++async function api(url,body,lease=ownerLease){
+  const res=await fetch(url+(url.includes('?')?'&':'?')+'controller='+encodeURIComponent(controllerId),{
+-  method:'POST',headers:{'Content-Type':'application/json','X-AGV-CSRF':AGV_CSRF,'X-AGV-Lease':ownerLease},body:JSON.stringify(body||{}),signal:AbortSignal.timeout?AbortSignal.timeout(500):undefined});
++  method:'POST',headers:{'Content-Type':'application/json','X-AGV-CSRF':AGV_CSRF,'X-AGV-Lease':lease},body:JSON.stringify(body||{}),signal:AbortSignal.timeout?AbortSignal.timeout(500):undefined});
+  const result=await res.json();if(!res.ok)throw Error(result.msg||result.error||res.status);return result;
+ }
+ async function controlFetch(url,options={}){
+@@ -33,13 +34,34 @@ async function transmitVector(v,ticket){
+   ticket:ticket,
+   environment:d.visualization.environment,generation:d.visualization.generation});
+ }
+-async function stopCmd(force=false){clearHeldInputs();if(!ownsControl&&!force)return;return controlFetch('/mecanum_control?estop=1',{keepalive:true});}
+-function loseControl(message){ownsControl=false;clearHeldInputs();controlStatus(message,true);}
++function stopCmd(force=false){
++ clearHeldInputs();nextTicket=null;
++ if(stopFlight&&!force)return stopFlight;
++ if(!ownsControl&&!force)return Promise.resolve();
++ // Do not let a fresh hold overtake a STOP still travelling to the server.
++ const epoch=controlEpoch;
++ const flight=controlFetch('/mecanum_control?estop=1&scope='+(force?'all':'owner'),{keepalive:true})
++  .then(result=>{if(!result&&epoch===controlEpoch)loseControl('Lỗi request DỪNG; kiểm tra kết nối trước khi nhận quyền lại');return result;})
++  .finally(()=>{if(stopFlight===flight)stopFlight=null;});
++ stopFlight=flight;
++ return stopFlight;
++}
++function loseControl(message){controlEpoch++;ownsControl=false;nextTicket=null;clearHeldInputs();controlStatus(message,true);}
+ async function releaseControl(){
+- const had=ownsControl;clearHeldInputs();if(!had)return;
+- try{await api('/control/release');}catch(e){}finally{loseControl('Đã nhả quyền lái');}
++ if(releaseFlight)return releaseFlight;
++ const had=ownsControl,lease=ownerLease;loseControl('Đã nhả quyền lái');if(!had)return;
++ releaseFlight=(async()=>{try{await api('/control/release',{},lease);}catch(e){controlStatus(e.message,true);}finally{releaseFlight=null;}})();
++ return releaseFlight;
+ }
+-byId('claim_control').onclick=async()=>{try{clearHeldInputs();const claim=await api('/control/claim');ownerLease=claim.lease;ownsControl=true;byId('claim_control').blur();controlStatus('Bạn đang lái · nhả để dừng');}catch(e){controlStatus(e.message,true);}};
++byId('claim_control').onclick=async()=>{
++ if(claimFlight||ownsControl)return;claimFlight=true;
++ try{
++  await releaseFlight;await stopFlight;clearHeldInputs();const epoch=++controlEpoch;
++  const claim=await api('/control/claim');
++  if(epoch!==controlEpoch){await api('/control/release',{},claim.lease);return;}
++  ownerLease=claim.lease;nextTicket=null;ownsControl=true;byId('claim_control').blur();controlStatus('Bạn đang lái · nhả để dừng');
++ }catch(e){controlStatus(e.message,true);}finally{claimFlight=false;}
++};
+ byId('release_control').onclick=releaseControl;
+ byId('set_profile').onclick=async()=>{try{
+  if(!byId('profile_confirm').checked)throw Error('Cần xác nhận khu vực thử, kích thước thân xe và dừng xe');
+@@ -47,10 +69,25 @@ byId('set_profile').onclick=async()=>{try{
+  controlStatus('Đã gửi cấu hình thử; xem phản hồi Mega trong telemetry');
+ }catch(e){controlStatus(e.message,true);}};
+ setInterval(async()=>{
+- if(!ownsControl||vectorFlight)return;
+- vectorFlight=true;
+- try{const renewal=await api('/control/renew');const v=intentVector();if(v.some(x=>x))await transmitVector(v,renewal.ticket);}
+- catch(e){try{await stopCmd();}finally{loseControl(e.message);}}
++ if(!ownsControl||vectorFlight||stopFlight)return;
++ vectorFlight=true;const epoch=controlEpoch,intentStamp=intentEpoch;
++ try{
++  // Active vectors return the next one-use ticket. Only one network round trip
++  // per hold update, instead of renew RTT + vector RTT between every setpoint.
++  let v=intentVector();
++  if(!nextTicket||!v.some(x=>x)){
++   const renewal=await api('/control/renew');
++   if(epoch!==controlEpoch||intentStamp!==intentEpoch||!ownsControl||stopFlight)return;
++   nextTicket=renewal.ticket;v=intentVector();
++   if(!v.some(x=>x)){nextTicket=null;return;}
++  }
++  if(v.some(x=>x)){
++   const ticket=nextTicket;nextTicket=null;
++   const result=await transmitVector(v,ticket);
++   if(epoch===controlEpoch&&intentStamp===intentEpoch&&ownsControl&&!stopFlight)nextTicket=result&&result.ticket;
++  }
++ }
++ catch(e){if(epoch===controlEpoch&&intentStamp===intentEpoch&&ownsControl){try{await stopCmd();}finally{loseControl(e.message);}}}
+  finally{vectorFlight=false;}
+ },80);
+ function refreshIntent(){if(!ownsControl)return;if(!intentVector().some(x=>x))stopCmd();}
+@@ -62,16 +99,16 @@ window.addEventListener('keydown',e=>{
+  if(e.code==='KeyX'){e.preventDefault();if(!e.repeat){clearHeldInputs();controlFetch('/toggle_mode?');}return;}
+  if(!KEY_COMMANDS[e.code])return;e.preventDefault();heldKeys.set(e.code,true);
+ });
+-window.addEventListener('keyup',e=>{heldKeys.delete(e.code);refreshIntent();});
++window.addEventListener('keyup',e=>{if(heldKeys.delete(e.code))refreshIntent();});
+ document.querySelectorAll('.ctrl-btn').forEach(b=>{
+  const key=BUTTON_KEYS[b.dataset.act];
+  if(b.dataset.act==='X'){b.onclick=()=>{clearHeldInputs();if(ownsControl)controlFetch('/toggle_mode?');};return;}
+  if(!key){b.onclick=()=>stopCmd(true);return;}
+  b.addEventListener('pointerdown',e=>{if(!ownsControl||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();b.setPointerCapture(e.pointerId);heldPointers.set(e.pointerId,key);});
+- for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{heldPointers.delete(e.pointerId);refreshIntent();});
++ for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{if(heldPointers.delete(e.pointerId))refreshIntent();});
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+ });
+-const joy=byId('vector_joystick');let joyPointer=null;
++const joy=byId('vector_joystick');
+ function joyMove(e){
+  const box=joy.getBoundingClientRect(),x=(e.clientX-box.left-box.width/2)/(box.width/2),y=(e.clientY-box.top-box.height/2)/(box.height/2);
+  const norm=Math.max(1,Math.hypot(x,y));joystickVector=[-y/norm,x/norm,0].map(v=>Math.abs(v)<.12?0:v);
+@@ -80,6 +117,6 @@ joy.addEventListener('pointerdown',e=>{if(!ownsControl||(e.pointerType==='mouse'
+ joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer)joyMove(e);});
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])joy.addEventListener(ev,e=>{if(e.pointerId===joyPointer){joyPointer=null;joystickVector=[0,0,0];refreshIntent();}});
+ window.addEventListener('blur',releaseControl);
+-window.addEventListener('pagehide',()=>{if(ownsControl)controlFetch('/mecanum_control?estop=1',{keepalive:true});clearHeldInputs();ownsControl=false;});
++window.addEventListener('pagehide',()=>{if(ownsControl)controlFetch('/mecanum_control?estop=1&scope=owner',{keepalive:true});loseControl('Đã rời trang');});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseControl();});
+ document.addEventListener('focusin',e=>{if(editingTarget(e.target)&&clearHeldInputs())stopCmd();});

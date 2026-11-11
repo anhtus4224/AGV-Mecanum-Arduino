@@ -11,5 +11,20 @@
   },
   "unchanged_motor_line_corner_functions": 13,
   "line_body_comparison": "identical except obstacle entry guard/delegation",
-  "hardware_tests": "not performed"
+  "hardware_tests": "not performed",
+  "touch_vector_v2": {
+    "base_commit": "882daf1239ab6a55617726c5eda8e3aefb7bdf9b",
+    "source_branch": "fix/vector-setpoint-ack-2026-11-10",
+    "change_branch": "fix/touch-strafe-avoid-2026-11-11",
+    "github_ref_verified": true,
+    "jetson_hash_verified_today": false,
+    "hardware_tests_this_revision": "not performed",
+    "reported_body_cm": {
+      "width_including_wheels": 47,
+      "front_from_center": 17,
+      "rear_from_center": 17,
+      "length_including_line_bar": 34
+    },
+    "source_regression_manifest": "SOURCE_COMPARISON_TOUCH_V2.json"
+  }
 }

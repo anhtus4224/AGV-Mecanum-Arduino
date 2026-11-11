@@ -175,6 +175,55 @@ class Tests(unittest.TestCase):
   drive,_=self.gateway.write('D',255,0,0);self.gateway.receive('ACK:{},OK'.format(drive['sequence']))
   self.gateway.last_motion=time.monotonic()-.5;self.gateway.watchdog()
   self.assertFalse(self.gateway.ready);self.assertEqual(self.gateway.link_events[-1]['code'],'MOTION_TIMEOUT')
+ def test_continuous_vectors_use_response_ticket_without_renew(self):
+  self.claim();data=self.vector(1)
+  for seq in range(1,9):
+   data['sequence']=seq;response=self.req(self.a,'/control/vector',data)
+   self.assertEqual(response.status_code,200)
+   data['ticket']=response.json['ticket']
+  self.assertEqual(len(self.gateway.tickets),1)
+ def test_response_ticket_still_expires_at_300ms(self):
+  self.claim();response=self.req(self.a,'/control/vector',self.vector(1))
+  ticket=response.json['ticket'];old=self.gateway.tickets[ticket]
+  self.gateway.tickets[ticket]=(time.monotonic()-.301,)+old[1:]
+  data=dict(drive=1,strafe=1,rotate=0,sequence=2,ticket=ticket,environment='real',generation=1)
+  self.assertEqual(self.req(self.a,'/control/vector',data).json['code'],'COMMAND_EXPIRED')
+ def test_stop_invalidates_ticket_even_with_newer_sequence(self):
+  self.claim();data=self.vector(9)
+  self.a.get('/mecanum_control?estop=1&scope=owner&controller=browser_123&sequence=4',headers=dict(self.auth,**{'X-AGV-Lease':self.gateway.owner_lease}))
+  count=len(self.port.data)
+  self.assertEqual(self.req(self.a,'/control/vector',data).json['code'],'TICKET')
+  self.assertEqual(count,len(self.port.data))
+ def test_late_lifecycle_stop_does_not_revoke_phone(self):
+  self.claim();old=self.gateway.owner_lease
+  self.req(self.a,'/control/release');self.req(self.b,'/control/claim',controller='phone_456')
+  owner=self.gateway.owner;count=len(self.port.data)
+  response=self.a.get('/mecanum_control?estop=1&scope=owner&controller=browser_123&sequence=99',headers=dict(self.auth,**{'X-AGV-Lease':old}))
+  self.assertEqual(response.json['status'],'ignored_old_owner')
+  self.assertEqual(owner,self.gateway.owner);self.assertEqual(count,len(self.port.data))
+ def test_lease_change_between_auth_and_endpoint_cannot_release(self):
+  @self.app.before_request
+  def concurrent_reclaim():
+   from flask import request
+   if request.path=='/control/release':self.gateway.owner_lease='new-lease-for-same-browser'
+  self.claim();owner=self.gateway.owner;count=len(self.port.data)
+  response=self.req(self.a,'/control/release')
+  self.assertEqual(response.status_code,409);self.assertEqual(owner,self.gateway.owner)
+  self.assertEqual(count,len(self.port.data))
+ def test_diagnostics_link_request_target_and_output(self):
+  self.claim();self.req(self.a,'/control/vector',dict(self.vector(1),drive=0,strafe=1))
+  self.gateway.receive('VECTOR_TARGET:3,80,-80,-80,80')
+  self.g['motion_feedback']={'wheels':[80,-80,-80,80],'received':time.monotonic()}
+  count=len(self.port.data);d=self.a.get('/control/diagnostics',headers=self.auth).json
+  self.assertEqual(d['requested_vector']['vector_pwm'],[0,255,0])
+  self.assertEqual(d['firmware_target']['wheels'],[80,-80,-80,80])
+  self.assertEqual(d['driver_pwm'],[-80,-80,80,80]);self.assertEqual(count,len(self.port.data))
+ def test_all_web_directions_reach_wire_unchanged(self):
+  self.claim()
+  for seq,(f,s,r) in enumerate([(1,0,0),(-1,0,0),(0,-1,0),(0,1,0),(1,-1,0),(1,1,0),(-1,-1,0),(-1,1,0),(0,0,-1),(0,0,1)],1):
+   data=self.vector(seq);data.update(drive=f,strafe=s,rotate=r)
+   self.assertEqual(self.req(self.a,'/control/vector',data).status_code,200)
+   self.assertIn((',D,{},{},{},250*'.format(f*255,s*255,r*255)).encode(),self.port.data[-1])
  def test_crc(self):
   data=frame(123,4,'D',255,130,0);body,crc=data[1:].strip().split(b'*')
   self.assertEqual(int(crc,16),binascii.crc_hqx(body,0xffff))

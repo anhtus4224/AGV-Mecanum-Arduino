@@ -1,10 +1,15 @@
 # AGV VECTOR1 — bản nâng cấp thử nghiệm, chưa thử trên xe
 
+**Bản sửa 11/11/2026: TOUCH_VECTOR_V2.** Đọc [TOUCH_VECTOR_V2.md](TOUCH_VECTOR_V2.md)
+và [TEST_REPORT_TOUCH_V2.md](TEST_REPORT_TOUCH_V2.md) trước khi dùng. Nguồn là
+SETPOINT_ACK_V1 tại commit 882daf1; chưa đối chiếu hash Jetson hôm nay.
+Dạt ngang mới được kiểm tra phần mềm/thêm chẩn đoán, chưa xác nhận sửa trên xe.
+
 Bản nguồn do người dùng chọn: CUAXOAYNGANG (Mega) + stream_server_reset_v1.py (Jetson/Web). Không dùng STABLE/CHUAN_GOC thay cho file chính. Xem PROVENANCE.json để nhận diện SHA-256. Không chạy script patch cũ.
 
 ## Những gì đã đổi
 
-- Giữ các chân, dấu motor, LINE_DETECTED=LOW, A2=OUT3, bảng INNER/OUTER, phần dò line và cua gốc. Chỉ thêm điểm vào né ở khoảng trước 60 cm, chuyển giao sau né và cơ chế giới hạn đầu ra khi thử.
+- Giữ các chân, dấu motor, LINE_DETECTED=LOW, A2=OUT3, bảng INNER/OUTER, phần dò line và cua gốc. Điểm vào né hiện là 55 cm, chuyển giao sau né và cơ chế giới hạn đầu ra khi thử.
 - Máy trạng thái né mới: dừng/quét xác nhận khoảng hở → tiến chéo ra (~27° danh nghĩa) → vượt → chéo về → A2 liên tục 80 ms → bàn giao dò line. Không thêm STOP giữa các chặng di chuyển đã đủ điều kiện. Quét đầu vẫn dừng; không cố đi mù để giữ độ mượt.
 - Mixer giữ quy ước bánh gốc. Trần tối đa 255, slew 8 PWM mỗi lượt mục tiêu 10 ms; hai cặp bánh phải có PWM khác nhau khi chạy chéo. Có qua 0 trước đảo chiều. STOP/watchdog bỏ qua ramp và xuất PWM0; không phải phanh cơ.
 - Giao thức VECTOR1 mang đồng thời tiến/ngang/xoay, CRC16-CCITT, phiên, thứ tự, ACK. Dữ liệu MOTION là PWM đã xuất, không phải encoder. Không dùng SAFE1. Bản mới chỉ gửi khung sau khi probe '?' nhận đúng AGV:VECTOR1; '?' không điều khiển firmware gốc được cung cấp.
@@ -18,7 +23,7 @@ Bản nguồn do người dùng chọn: CUAXOAYNGANG (Mega) + stream_server_rese
 
 Đây là bản để kiểm chứng và hiệu chỉnh, KHÔNG chứng nhận né an toàn ở PWM255. Bốn siêu âm không đo được toàn bộ bề rộng vật, mọi góc thân/đuôi hay độ trượt. Thời gian chặng/700 ms vượt tối thiểu chỉ là giới hạn thực nghiệm, không phải bằng chứng đã qua hết vật. Bản mới đòi dấu hiệu cạnh vật từ nhiều mẫu bên **hợp lệ**; không có echo/không đủ khoảng trống sẽ dừng chờ, có thể xảy ra thường xuyên với bình hẹp trong video. Không bỏ kiểm tra đó chỉ để xe tiếp tục chạy.
 
-`VectorMotion.h` đang giả định nửa rộng thân 15 cm, nhô trước/sau 15 cm, biên 12 cm. Phải đo cả bánh, cảm biến và phần nhô, đối chiếu vị trí các đầu siêu âm; sửa thông số vỏ xe ở bản làm việc riêng trước khi bật né nếu không khớp. Các giả định này chưa được đo lại trên mô hình của bạn. Không thể tự xác minh bằng checkbox trên Web.
+`VectorMotion.h` dùng số người dùng đo: rộng cả bánh 47 cm (nửa rộng 23,5), nhô trước/sau 17 cm, tổng dài 34 cm gồm thanh line; biên 12 cm giữ nguyên. Chưa đo vị trí gốc/góc mù các đầu siêu âm. Các guard bảo thủ này không chứng minh toàn bộ vùng thân quét trống. Không thể tự xác minh bằng checkbox trên Web; xem TOUCH_VECTOR_V2.md.
 
 Chu kỳ mục tiêu 10 ms không phải chứng nhận thời gian thực cứng. pulseIn vẫn có thể chờ tối đa 8 ms/mẫu; phần mềm servo dùng cùng chân và khoảng xung 600–2400 us, giữ hàm servo gốc nguyên vẹn nhưng quét mới không dùng vòng hold. Telemetry/UART cũng có thể làm trễ; phải đo độ trễ STOP/chu kỳ thực trên Mega.
 

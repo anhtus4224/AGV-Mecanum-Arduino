@@ -48,6 +48,9 @@ class Gateway:
                 self.ready=False;self.g['clear_link'](self.link_reason);return {'msg':'Lỗi USB','sent':False},503
             if op=='S':self.stopped=True
             if op in ('D','A'):self.stopped=False
+            if op=='D':
+                self.g['state']['last_drive_request']={'sequence':self.seq,'vector_pwm':[f,right,rot],
+                    'at_monotonic_ms':round(time.monotonic()*1000)}
             return {'status':'sent','sent':True,'acknowledged':False,'sequence':self.seq,'command':op},200
 
     def stop(self):
@@ -96,6 +99,14 @@ class Gateway:
             return
         if line.startswith('AVOID_FAULT:'):
             self.g['state']['avoid_fault']=line[12:];return
+        if line.startswith('VECTOR_TARGET:'):
+            try:
+                values=list(map(int,line[14:].split(',')))
+                if len(values)==5 and all(-255<=v<=255 for v in values[1:]):
+                    self.g['state']['firmware_target']={'sequence':values[0],'wheels':values[1:],
+                        'at_monotonic_ms':round(now*1000)}
+            except ValueError:pass
+            return
         old_motion=self.g.get('motion_feedback')
         old_sonar=self.g['state'].get('sonar_raw')
         self.g['parse_mega_line'](line)
@@ -201,6 +212,11 @@ class Gateway:
         if not 8<=len(client)<=64 or not client.replace('_','').replace('-','').isalnum():return None
         return (session['viewer'],client)
 
+    def has_lease(self):
+        # Recheck inside the endpoint's lock: ownership can change after before_request.
+        return (self.identity()==self.owner and time.monotonic()<self.owner_until
+                and hmac.compare_digest(request.headers.get('X-AGV-Lease',''),self.owner_lease))
+
     def install(self,app):
         app.secret_key=secrets.token_bytes(32)
         app.config.update(SESSION_COOKIE_HTTPONLY=True,SESSION_COOKIE_SAMESITE='Strict',MAX_CONTENT_LENGTH=16384)
@@ -222,12 +238,17 @@ class Gateway:
                 # Any authenticated viewer may explicitly STOP. Other viewers' lifecycle events are suppressed by UI.
                 stop=path=='/mecanum_control' and request.args.get('estop')=='1'
                 if stop:
+                    if request.args.get('scope')=='owner' and not self.has_lease():
+                        return jsonify(status='ignored_old_owner')
                     try: seq=int(request.args.get('sequence','0'))
                     except ValueError:return jsonify(msg='Sequence không hợp lệ'),400
                     if who is not None:self.web_sequence[who]=max(seq,self.web_sequence.get(who,0))
                     if who!=self.owner:self.owner=None;self.owner_until=0
+                    self.tickets.clear()
                     self.g['simulation_vector']=[0.,0.,0.]
-                    return None
+                    # Keep authorization/fencing and the actual STOP atomic with
+                    # respect to claim/release/vector on other Flask threads.
+                    return app.view_functions[request.endpoint]()
                 if who is None or who!=self.owner or time.monotonic()>=self.owner_until or not hmac.compare_digest(request.headers.get('X-AGV-Lease',''),self.owner_lease):
                     return jsonify(error='Bạn chưa có quyền lái hoặc quyền đã hết hạn',msg='Chưa có quyền lái'),409
                 if path=='/toggle_mode':
@@ -246,9 +267,16 @@ class Gateway:
         def diagnostics():
             with self.lock:
                 now=time.monotonic();m=self.g.get('motion_feedback')
-                return jsonify(gateway_revision='SETPOINT_ACK_V1',ready=self.ready,port=self.g['state'].get('port'),
+                wheels=m['wheels'] if m else None
+                electrical=[-wheels[0],wheels[1],-wheels[2],wheels[3]] if wheels else None
+                return jsonify(gateway_revision='TOUCH_VECTOR_V2',ready=self.ready,port=self.g['state'].get('port'),
                     motion_age_ms=round((now-m['received'])*1000) if m else None,
                     current_pwm=m['wheels'] if m else None,
+                    wheel_order=['FL','FR','RL','RR'],
+                    requested_vector=self.g['state'].get('last_drive_request'),
+                    firmware_target=self.g['state'].get('firmware_target'),
+                    driver_pwm=electrical,driver_pwm_source='derived from MOTION and unchanged drive polarity; not measured pins',
+                    avoid_fault=self.g['state'].get('avoid_fault'),
                     last_drive_ack=self.g['state'].get('last_drive_ack'),
                     last_nonzero_pwm=self.g['state'].get('last_nonzero_pwm'),
                     link_events=list(self.link_events),
@@ -267,10 +295,14 @@ class Gateway:
                 return jsonify(status='owner',lease=self.owner_lease,msg='Đã nhận quyền; các phím cũ đã được bỏ')
         @app.route('/control/renew',methods=['POST'])
         def renew():
-            with self.lock:return jsonify(status='owner',ticket=self.issue_ticket())
+            with self.lock:
+                if not self.has_lease():return jsonify(msg='Quyền lái đã hết'),409
+                return jsonify(status='owner',ticket=self.issue_ticket())
         @app.route('/control/release',methods=['POST'])
         def release():
-            with self.lock:self.stop();self.owner=None;self.owner_until=0
+            with self.lock:
+                if not self.has_lease():return jsonify(msg='Quyền lái đã hết'),409
+                self.stop();self.g['simulation_vector']=[0.,0.,0.];self.owner=None;self.owner_until=0;self.tickets.clear()
             return jsonify(status='released')
         @app.route('/control/profile',methods=['POST'])
         def profile():
@@ -295,7 +327,7 @@ class Gateway:
                 return jsonify(msg='Vector phải có ba số hữu hạn trong [-1,1]',code='VECTOR'),400
             with self.lock:
                 key=self.identity()
-                if key!=self.owner or time.monotonic()>=self.owner_until:return jsonify(msg='Quyền lái đã hết'),409
+                if not self.has_lease():return jsonify(msg='Quyền lái đã hết'),409
                 old=self.web_sequence
                 if sequence<=old.get(key,0):return jsonify(status='ignored_stale')
                 if body.get('environment')!=self.g['driving_environment'] or body.get('generation')!=self.g['drive_generation']:
@@ -305,10 +337,12 @@ class Gateway:
                 if issued is None or issued[1:]!=(self.owner_lease,self.g['driving_environment'],self.g['drive_generation']):
                     return jsonify(msg='Phiếu lệnh không hợp lệ; tải lại trang và nhận quyền',code='TICKET'),409
                 if not 0<=time.monotonic()-issued[0]<=.3:
-                    return jsonify(msg='Gói điều khiển tới quá chậm (>300 ms); đã dừng. Nhận quyền lại khi mạng ổn định',code='COMMAND_EXPIRED'),409
+                    return jsonify(msg='Gói điều khiển tới quá chậm (>300 ms); đã dừng. Nhận quyền lại khi mạng ổn định',code='COMMAND_EXPIRED',age_ms=round((time.monotonic()-issued[0])*1000)),409
                 old[key]=sequence;self.web_sequence={key:sequence}
                 if self.g['driving_environment']=='simulation':
                     self.g['simulation_vector']=v;self.g['simulation_vector_at']=time.monotonic()
-                    return jsonify(status='simulation',command='VECTOR')
+                    return jsonify(status='simulation',command='VECTOR',ticket=self.issue_ticket())
                 if self.g['state']['mode']!='LÁI TAY' or not self.g['auto_or_manual_fresh']():return jsonify(msg='Cần LÁI TAY và dữ liệu Mega mới'),409
-                result,code=self.write('D',*[int(round(x*255)) for x in v]);return jsonify(result),code
+                result,code=self.write('D',*[int(round(x*255)) for x in v])
+                if code==200:result['ticket']=self.issue_ticket()
+                return jsonify(result),code
