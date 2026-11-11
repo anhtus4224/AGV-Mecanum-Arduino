@@ -254,7 +254,7 @@ class Tests(unittest.TestCase):
   d=self.a.get('/control/diagnostics',headers=self.auth).json
   self.assertEqual(d['avoid_samples']['left_valid'],2)
   self.assertEqual(d['avoid_samples']['right_valid'],0)
-  self.assertEqual(d['gateway_revision'],'AVOID_DIRECTIONAL_V3')
+  self.assertEqual(d['gateway_revision'],'AVOID_DIRECTIONAL_V4')
   self.assertEqual(count,len(self.port.data))
  def test_direction_policy_and_full_range_metadata(self):
   count=len(self.port.data)

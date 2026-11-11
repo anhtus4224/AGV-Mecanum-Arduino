@@ -1708,7 +1708,7 @@ void vectorRead(){
  int budget=96;
  while(Serial.available()&&budget--){char c=Serial.read();
   if(c=='?'){
-   if(!frameActive){Serial.println("AGV:VECTOR1");Serial.println("VECTOR_BUILD:AVOID_DIRECTIONAL_V3");}
+   if(!frameActive){Serial.println("AGV:VECTOR1");Serial.println("VECTOR_BUILD:AVOID_DIRECTIONAL_V4");}
    continue;
   }
   if(c=='@'){frameActive=true;frameOverflow=false;frameLength=0;continue;}
@@ -1803,11 +1803,19 @@ void vectorService(){
  if((uint32_t)(now-vectorTickAt)<10)return;
  vectorTickAt=now;
  if(vectorAvoid.phase>=VmAvoid::OUT&&vectorAvoid.phase<=VmAvoid::CENTER){
+  vectorAvoid.observeWheels(now,actualWheels);
   int f=0,s=0;vectorAvoid.tick(now,rangeF,rangeB,rangeL,rangeR,digitalRead(A2)==LINE_DETECTED,f,s);
   vectorApply(f,s,0,vectorAvoid.cap);
  }
  if(vectorAvoid.phase==VmAvoid::FAULT){
-  const char *why=vectorAvoid.fault;vectorStop();Serial.print("AVOID_FAULT:");Serial.println(why);return;
+  const char *why=vectorAvoid.fault;vectorStop();
+  Serial.print("AVOID_GUARD:");Serial.print(now);Serial.print(',');Serial.print((int)vectorAvoid.faultPhase);
+  Serial.print(',');Serial.print(vectorAvoid.side);
+  Serial.print(',');Serial.print(rangeF.cm);Serial.print(',');Serial.print(rangeB.cm);
+  Serial.print(',');Serial.print(rangeL.cm);Serial.print(',');Serial.print(rangeR.cm);
+  Serial.print(',');Serial.print((uint32_t)(now-rangeF.at));Serial.print(',');Serial.print((uint32_t)(now-rangeB.at));
+  Serial.print(',');Serial.print((uint32_t)(now-rangeL.at));Serial.print(',');Serial.println((uint32_t)(now-rangeR.at));
+  Serial.print("AVOID_FAULT:");Serial.println(why);return;
  }
  if(vectorAvoid.phase==VmAvoid::HANDOFF && abs(actualWheels[0]-actualWheels[1]-actualWheels[2]+actualWheels[3])>48){
   // Finish removing lateral wheel demand before giving the differential line controller ownership.
@@ -1834,5 +1842,10 @@ void vectorMotion(){
  Serial.print(',');Serial.println(isExecutingAvoidance?1:0);
  Serial.print("VECTOR_TARGET:");Serial.print(targetSequence);
  for(int i=0;i<4;i++){Serial.print(',');Serial.print(vectorTarget[i]);}Serial.println();
+ Serial.print("VECTOR_RANGE:");Serial.print(now);
+ Serial.print(',');Serial.print(rangeF.cm);Serial.print(',');Serial.print(rangeB.cm);
+ Serial.print(',');Serial.print(rangeL.cm);Serial.print(',');Serial.print(rangeR.cm);
+ Serial.print(',');Serial.print((uint32_t)(now-rangeF.at));Serial.print(',');Serial.print((uint32_t)(now-rangeB.at));
+ Serial.print(',');Serial.print((uint32_t)(now-rangeL.at));Serial.print(',');Serial.println((uint32_t)(now-rangeR.at));
  Serial.print("VECTOR_STATE:");Serial.print((int)vectorAvoid.phase);Serial.print(',');Serial.print(vectorAvoid.cap);Serial.print(',');Serial.println(vectorAvoid.enabled?1:0);
 }

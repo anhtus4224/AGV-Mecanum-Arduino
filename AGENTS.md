@@ -2,6 +2,9 @@
 
 ## Triển khai có người vận hành (11/11/2026)
 
+- Yêu cầu V4: đọc `upgrade_v1/DIRECTIONAL_AVOID_TEACH_V4.md`. Người dùng xác nhận tổng4 sonar, chỉ F trên servo;24 cm là khoảng ngang F→bánh. Né chọn từng phía, không đòi phía đối diện là một hành lang thứ hai; vẫn giữ guard sát thân. Ghi/quay về là thử nghiệm lệnh-thời gian, không có odometry/IMU; cần thời gian180° đã đo, không bịa góc/quãng đường chính xác.
+- Ưu tiên sửa4 file runtime trực tiếp bằng VS Code Remote-SSH/SSH FS rồi khởi động lại launcher, tránh ZIP/chu kỳ nguồn cho sửa Python/JS. Editor local và terminal SSH là hai ngữ cảnh khác nhau. Firmware sửa rồi vẫn phải Upload bằng trình tự nguồn đã chốt. Giữ các nhánh và bản nền trước, không gọi test giả là đã thử xe.
+
 - Cập nhật yêu cầu né mới: đọc `upgrade_v1/DIRECTIONAL_AVOID_V3.md`. Người dùng yêu cầu xét hướng có sonar bên không echo khi quét chéo đã xác nhận; hỗ trợ các cap chủ động80/120/160/200/255, mặc định80/né tắt. Không diễn giải999 thành khoảng cách giả hoặc bằng chứng độc lập về an toàn; phân biệt test phần mềm với thử xe và giữ các guard còn lại.
 - Dùng hướng dẫn `docs/TRIEN_KHAI_TOUCH_VECTOR_V2.md` cho gói dc1092c62572b3ec2ac7c13fde3014ec392b23e0 và ngữ cảnh bàn giao hiện tại.
 - Trong chat triển khai: một bước nhỏ mỗi lần, ghi rõ terminal PC/Jetson và chỗ bấm, đợi kết quả/ảnh sau bước quan trọng. Xem dấu nhắc để xác nhận SSH; không coi tên tab JETSON là bằng chứng. Không yêu cầu chạy lại bước đã xác nhận xong.

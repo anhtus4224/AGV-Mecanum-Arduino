@@ -34,10 +34,10 @@ int main(){
  hostSession=77;char crc[8];const char* body="V1,77,1,S,0,0,0,250";
  snprintf(crc,sizeof(crc),"*%04X\n",vectorCrc(body));Serial.feed(std::string("@")+body+crc);
  loop();assert(vectorAvoid.phase==VmAvoid::OFF);for(int w:actualWheels)assert(w==0);
- Serial.feed("?");vectorRead();assert(Serial.output.find("VECTOR_BUILD:AVOID_DIRECTIONAL_V3")!=std::string::npos);
+ Serial.feed("?");vectorRead();assert(Serial.output.find("VECTOR_BUILD:AVOID_DIRECTIONAL_V4")!=std::string::npos);
  // A later valid close return on that side still stops the whole motion.
  vectorAvoid.choose(999,45,152,118,fakeNow);
- rangeL={20,(uint32_t)fakeNow};fakeNow+=10;hostAt=fakeNow;vectorService();
+ rangeL={8,(uint32_t)fakeNow};fakeNow+=10;hostAt=fakeNow;vectorService();
  assert(vectorAvoid.phase==VmAvoid::OFF);for(int w:actualWheels)assert(w==0);
  // UART STOP is serviced between bounded center reads, before any motion decision.
  vectorBeginAvoidance();scanCenterSlot=0;vectorAvoid.enter(VmAvoid::SCAN_CENTER,fakeNow-450);

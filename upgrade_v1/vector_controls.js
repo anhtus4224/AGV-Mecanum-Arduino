@@ -4,6 +4,7 @@ const heldKeys=new Map(),heldPointers=new Map();
 const KEY_COMMANDS={KeyW:[1,0,0],KeyS:[-1,0,0],KeyA:[0,-1,0],KeyD:[0,1,0],KeyQ:[0,0,-1],KeyE:[0,0,1],DiagNW:[1,-1,0],DiagNE:[1,1,0],DiagSW:[-1,-1,0],DiagSE:[-1,1,0]};
 const BUTTON_KEYS={W:'KeyW',B:'KeyS',A:'KeyA',D:'KeyD',Q:'KeyQ',E:'KeyE',NW:'DiagNW',NE:'DiagNE',SW:'DiagSW',SE:'DiagSE'};
 let ownerLease="";
+let teachReturning=false,teachAction=false;
 let controlSequence=0,ownsControl=false,vectorFlight=false,joystickVector=[0,0,0],joyPointer=null;
 let controlEpoch=0,intentEpoch=0,nextTicket=null,stopFlight=null,releaseFlight=null,claimFlight=false;
 function controlStatus(text,error=false){byId('control_status').textContent=text;byId('control_status').style.color=error?'#fda4af':'#94a3b8';}
@@ -35,7 +36,7 @@ async function transmitVector(v,ticket){
   environment:d.visualization.environment,generation:d.visualization.generation});
 }
 function stopCmd(force=false){
- clearHeldInputs();nextTicket=null;
+ teachReturning=false;clearHeldInputs();nextTicket=null;
  if(stopFlight&&!force)return stopFlight;
  if(!ownsControl&&!force)return Promise.resolve();
  // Do not let a fresh hold overtake a STOP still travelling to the server.
@@ -46,7 +47,7 @@ function stopCmd(force=false){
  stopFlight=flight;
  return stopFlight;
 }
-function loseControl(message){controlEpoch++;ownsControl=false;nextTicket=null;clearHeldInputs();controlStatus(message,true);}
+function loseControl(message){teachReturning=false;controlEpoch++;ownsControl=false;nextTicket=null;clearHeldInputs();controlStatus(message,true);}
 async function releaseControl(){
  if(releaseFlight)return releaseFlight;
  const had=ownsControl,lease=ownerLease;loseControl('Đã nhả quyền lái');if(!had)return;
@@ -74,6 +75,17 @@ setInterval(async()=>{
  try{
   // Active vectors return the next one-use ticket. Only one network round trip
   // per hold update, instead of renew RTT + vector RTT between every setpoint.
+  if(teachAction||teachReturning){
+   const d=await api('/control/renew');
+   if(epoch===controlEpoch&&ownsControl){
+    nextTicket=null;
+    if(d.teach_return){
+     byId('teach_status').textContent=d.teach_return.message+' · bước '+d.teach_return.step+'/'+d.teach_return.steps;
+     if(!teachAction)teachReturning=d.teach_return.active;
+    }
+   }
+   return;
+  }
   let v=intentVector();
   if(!nextTicket||!v.some(x=>x)){
    const renewal=await api('/control/renew');
@@ -95,7 +107,7 @@ function editingTarget(t){return t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$
 window.addEventListener('keydown',e=>{
  if(editingTarget(e.target)||e.ctrlKey||e.altKey||e.metaKey||byId('drawing_start_dialog').open)return;
  if(e.code==='Space'||e.code==='KeyZ'){e.preventDefault();if(!e.repeat)stopCmd(true);return;}
- if(!ownsControl)return;
+ if(!ownsControl||teachReturning||teachAction)return;
  if(e.code==='KeyX'){e.preventDefault();if(!e.repeat){clearHeldInputs();controlFetch('/toggle_mode?');}return;}
  if(!KEY_COMMANDS[e.code])return;e.preventDefault();heldKeys.set(e.code,true);
 });
@@ -104,7 +116,7 @@ document.querySelectorAll('.ctrl-btn').forEach(b=>{
  const key=BUTTON_KEYS[b.dataset.act];
  if(b.dataset.act==='X'){b.onclick=()=>{clearHeldInputs();if(ownsControl)controlFetch('/toggle_mode?');};return;}
  if(!key){b.onclick=()=>stopCmd(true);return;}
- b.addEventListener('pointerdown',e=>{if(!ownsControl||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();b.setPointerCapture(e.pointerId);heldPointers.set(e.pointerId,key);});
+ b.addEventListener('pointerdown',e=>{if(!ownsControl||teachReturning||teachAction||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();b.setPointerCapture(e.pointerId);heldPointers.set(e.pointerId,key);});
  for(const event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,e=>{if(heldPointers.delete(e.pointerId))refreshIntent();});
  b.addEventListener('contextmenu',e=>e.preventDefault());
 });
@@ -113,10 +125,52 @@ function joyMove(e){
  const box=joy.getBoundingClientRect(),x=(e.clientX-box.left-box.width/2)/(box.width/2),y=(e.clientY-box.top-box.height/2)/(box.height/2);
  const norm=Math.max(1,Math.hypot(x,y));joystickVector=[-y/norm,x/norm,0].map(v=>Math.abs(v)<.12?0:v);
 }
-joy.addEventListener('pointerdown',e=>{if(!ownsControl||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);joyMove(e);});
+joy.addEventListener('pointerdown',e=>{if(!ownsControl||teachReturning||teachAction||(e.pointerType==='mouse'&&e.button!==0))return;e.preventDefault();joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);joyMove(e);});
 joy.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer)joyMove(e);});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])joy.addEventListener(ev,e=>{if(e.pointerId===joyPointer){joyPointer=null;joystickVector=[0,0,0];refreshIntent();}});
 window.addEventListener('blur',releaseControl);
 window.addEventListener('pagehide',()=>{if(ownsControl)controlFetch('/mecanum_control?estop=1&scope=owner',{keepalive:true});loseControl('Đã rời trang');});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseControl();});
 document.addEventListener('focusin',e=>{if(editingTarget(e.target)&&clearHeldInputs())stopCmd();});
+
+async function teachActionRequest(action){
+ if(!ownsControl){controlStatus('Nhận quyền lái trước',true);return;}
+ if(teachAction)return;
+ teachAction=true;clearHeldInputs();nextTicket=null;
+ const epoch=controlEpoch;
+ try{
+  // Let an already-sent manual vector settle BEFORE STOP. No new manual vectors
+  // are sent while this action owns the UI. Backend still checks stopped PWM.
+  while(vectorFlight&&epoch===controlEpoch)await new Promise(resolve=>setTimeout(resolve,10));
+  if(epoch!==controlEpoch)return;
+  await stopCmd();
+  if(epoch!==controlEpoch||!ownsControl)return;
+  const until=performance.now()+1500;
+  while(true){
+   const status=await api('/control/teach',{action:'status'});
+   if(epoch!==controlEpoch||!ownsControl)return;
+   if(status.stopped)break;
+   if(performance.now()>until)throw Error('Mega chưa xác nhận STOP/PWM 0; kiểm tra rồi thử lại');
+   await new Promise(resolve=>setTimeout(resolve,80));
+  }
+  if(action==='begin'){
+   const anchor=await api('/drive/reset-estimate',{confirmed:true,x:0,y:0,theta:0});
+   resetFence={server_instance:anchor.visualization.server_instance,generation:anchor.visualization.generation};
+   stopVehicleAnimation();smoothedVehicle=null;vehicleTarget=null;
+   renderTelemetry({...latestTelemetry,visualization:anchor.visualization,navigation:anchor.navigation,
+    control_server_time_ms:anchor.control_server_time_ms});
+  }
+  const permit=await api('/control/renew');
+  if(epoch!==controlEpoch||!ownsControl)return;
+  const result=await api('/control/teach',{action:action,sequence:++controlSequence,ticket:permit.ticket,
+   turn_seconds:Number(byId('teach_turn_seconds').value),calibrated:byId('teach_calibrated').checked});
+  if(epoch!==controlEpoch||!ownsControl){await stopCmd(true);return;}
+  teachReturning=result.active;
+  byId('teach_status').textContent=result.message+' · '+result.segments+' đoạn · '+result.seconds+' giây';
+ }catch(e){await stopCmd(true);controlStatus(e.message,true);byId('teach_status').textContent=e.message;}
+ finally{teachAction=false;}
+}
+byId('teach_begin').onclick=()=>teachActionRequest('begin');
+byId('teach_finish').onclick=()=>teachActionRequest('finish');
+byId('teach_return').onclick=()=>teachActionRequest('return');
+byId('teach_cancel').onclick=()=>stopCmd(true);

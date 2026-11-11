@@ -1228,7 +1228,7 @@ def parse_motion_feedback(line, now):
 
 def integrate_visual(v,fwd,left,turn,dt):
     if not v['trail'] or v['trail'][-1]['segment'] != v['segment']:
-        v['trail'].append({'x':v['x'],'y':v['y'],'segment':v['segment']})
+        v['trail'].append({'x':v['x'],'y':v['y'],'segment':v['segment'],'leg':v.get('trace_leg','manual')})
     # Midpoint yaw improves curved-path integration without changing motor control.
     theta = math.radians(v['theta'])+turn*dt/2
     v['x'] += (fwd*math.cos(theta)-left*math.sin(theta))*dt
@@ -1237,7 +1237,7 @@ def integrate_visual(v,fwd,left,turn,dt):
     distance = math.hypot(fwd,left)*dt
     v['distance'] += distance
     if distance and math.hypot(v['x']-v['trail'][-1]['x'],v['y']-v['trail'][-1]['y']) >= .005:
-        v['trail'].append({'x':v['x'],'y':v['y'],'segment':v['segment']})
+        v['trail'].append({'x':v['x'],'y':v['y'],'segment':v['segment'],'leg':v.get('trace_leg','manual')})
         del v['trail'][:-2000]
 
 
@@ -1350,6 +1350,8 @@ def telemetry():
     now = time.monotonic()
     # Check raw validity ages at response time, including when no worker has started yet.
     payload = dict(state)
+    with serial_lock:
+        payload["teach_return"] = gateway.teach.snapshot()
     sonar_at=state.get('sonar_received_monotonic')
     payload['sonar_age_ms']=int((now-sonar_at)*1000) if sonar_at else None
     payload['server_version'] = SERVER_VERSION
@@ -1799,6 +1801,15 @@ HTML_PAGE = """<!DOCTYPE html>
             </div>
             <div class="hardware-strip"><span>USB <b id="val_port">DISCONNECTED</b></span><span>Pin <b id="val_volt">—</b></span><span id="record_state">Chưa ghi nhật ký</span></div>
             <div class="map-actions"><button type="button" id="show_drawing_start">Đặt lại điểm đầu / phiên vẽ</button><button type="button" id="show_route">Khai báo tuyến</button><button type="button" id="show_pose">Xác nhận vị trí tại mốc</button><button type="button" id="clear_trail" title="Xóa vệt xanh, giữ vị trí, quãng đường và các mốc đã xác nhận">Xóa vệt xanh</button><button type="button" id="toggle_plan" aria-pressed="true">Ẩn tuyến khai báo</button><button type="button" id="record_toggle">Bắt đầu ghi nhật ký</button><a href="/map/export" id="export_log">Tải nhật ký</a></div>
+            <div class="map-actions" aria-label="Ghi đường lái tay và quay về">
+                <button type="button" id="teach_begin">Đặt điểm đầu + ghi đường lái tay</button>
+                <button type="button" id="teach_finish">Chốt đường tại điểm dừng</button>
+                <button type="button" id="teach_return">Quay 180° và về theo đường đã ghi</button>
+                <button type="button" id="teach_cancel">Hủy quay về / DỪNG</button>
+            </div>
+            <label>Thời gian quay 180° đã đo tại PWM 80 · giây <input id="teach_turn_seconds" type="number" min="0.2" max="30" step="0.01" placeholder="Nhập sau khi đo trên xe"></label>
+            <label><input id="teach_calibrated" type="checkbox"> Đã hiệu chuẩn lượt quay và kiểm tra khoảng trống quay xe.</label>
+            <p id="teach_status" role="status">Vệt ghi màu đỏ, vệt quay về màu xanh lam. Ghi lệnh/thời gian trong phiên này; quãng đường là ước lượng. DỪNG hoặc nhả quyền sẽ hủy lượt quay về.</p>
             <div id="map_message" class="map-message" role="status" aria-live="polite">Tuyến đã khai báo không phải quỹ đạo xe đo được.</div>
 
 <form id="drawing_form" class="map-form">
@@ -2127,9 +2138,15 @@ function drawMap() {
     if(v && v.trail.length>1) {
         ctx.save();ctx.strokeStyle='#4dff76';ctx.lineWidth=3.5;ctx.lineJoin='round';ctx.lineCap='round';
         ctx.shadowColor='#39ff78';ctx.shadowBlur=5;ctx.setLineDash(v.environment==='real'?[8,5]:[]);
-        ctx.beginPath();let segment=null;
-        for(const p of v.trail){const q=project(p.x,p.y,.012);if(p.segment!==segment){ctx.moveTo(...q);segment=p.segment;}else ctx.lineTo(...q);}
-        ctx.stroke();ctx.restore();
+        let previous=null;
+        for(const p of v.trail){
+            if(previous&&p.segment===previous.segment){
+                const color=p.leg==='return'?'#38bdf8':p.leg==='teach'?'#fb7185':'#4dff76';
+                line(project(previous.x,previous.y,.012),project(p.x,p.y,.012),color,3.5,v.environment==='real'?[8,5]:[]);
+            }
+            previous=p;
+        }
+        ctx.restore();
     }
     if(currentMap&&currentMap.pose&&!currentMap.pose.valid){const p=currentMap.pose,q=project(p.x,p.y);line([q[0]-7,q[1]-7],[q[0]+7,q[1]+7],'#fb7185',2);line([q[0]-7,q[1]+7],[q[0]+7,q[1]-7],'#fb7185',2);}
     // Measured outer envelope 34 x 47 cm; wheel sizes/placement remain illustrative.
@@ -2518,6 +2535,12 @@ simulation_vector_at = 0.
 def auto_or_manual_fresh():
     return bool(link_ready and motion_feedback and time.monotonic()-motion_feedback['received'] < .3)
 
+def teach_heading_anchor(theta):
+    # User-calibrated timed turn, still an assumption rather than measured yaw.
+    with map_lock:
+        visual_sessions['real']['theta']=theta%360
+
+
 def vector_physics_worker():
     last=time.monotonic()
     while True:
@@ -2529,11 +2552,17 @@ def vector_physics_worker():
                 integrate_visual(v,cmd[0]*AUTO_LINEAR_MPS,-cmd[1]*AUTO_STRAFE_MPS,-cmd[2]*AUTO_TURN_RADPS,dt)
                 v.update(source='simulation',lost=False,started=v['started'] or any(cmd),moving=any(cmd),speed=math.hypot(cmd[0]*AUTO_LINEAR_MPS,cmd[1]*AUTO_STRAFE_MPS))
             elif state.get('mode')=='LÁI TAY':
+                v['trace_leg']='return' if gateway.teach.active else 'teach' if gateway.teach.recording else 'manual'
                 v['source']='manual_pwm_estimate'
                 fresh=auto_or_manual_fresh();v['moving']=bool(fresh and any(motion_feedback['wheels']))
                 if v['moving']:v['started']=True
                 if fresh and not v['lost']:
-                    f,left,turn=pwm_velocity(motion_feedback['wheels']);integrate_visual(v,f,left,turn,dt);v['speed']=math.hypot(f,left)
+                    f,left,turn=pwm_velocity(motion_feedback['wheels'])
+                    if gateway.teach.active and gateway.teach.index==0:
+                        # Show the timed 180-degree turn using its calibration;
+                        # never present the unrelated drawing gain as measured yaw.
+                        turn=-math.pi/gateway.teach.plan[0][0]
+                    integrate_visual(v,f,left,turn,dt);v['speed']=math.hypot(f,left)
                 else:v['speed']=0.
         time.sleep(.02)
 physics_worker=vector_physics_worker
